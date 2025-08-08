@@ -97,12 +97,16 @@ class RateRadar {
             
             document.getElementById('toAmount').value = convertedAmount.toFixed(2);
             document.getElementById('exchangeRate').textContent = `1 ${fromCurrency} = ${rate.toFixed(4)} ${toCurrency}`;
-            document.getElementById('lastUpdated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
             
             this.exchangeRate = rate;
         } catch (error) {
             console.error('Error converting currency:', error);
-            this.showError('Failed to convert currency. Please try again.');
+            this.showError('Network error - check connection');
+            // Show fallback data
+            document.getElementById('toAmount').value = '0.00';
+            document.getElementById('exchangeRate').textContent = `1 ${fromCurrency} = 0.00 ${toCurrency}`;
+            document.getElementById('lastUpdated').textContent = 'Offline';
         } finally {
             this.showLoading(false);
         }
@@ -138,71 +142,175 @@ class RateRadar {
             const change = await this.getCryptoChange(fromCrypto);
             
             document.getElementById('cryptoPrice').textContent = `$${price.toFixed(2)}`;
-            document.getElementById('cryptoChange').textContent = `${change > 0 ? '+' : ''}${change.toFixed(2)}% (24h)`;
-            document.getElementById('cryptoChange').className = `text-xs ${change >= 0 ? 'text-green-400' : 'text-red-400'} mt-1`;
+            document.getElementById('cryptoChange').textContent = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
+            document.getElementById('cryptoChange').className = `text-xs ${change >= 0 ? 'text-green-600' : 'text-red-600'}`;
             
             this.cryptoPrice = price;
         } catch (error) {
             console.error('Error converting crypto:', error);
-            this.showError('Failed to convert crypto. Please try again.');
+            this.showError('Network error - check connection');
+            // Show fallback data
+            document.getElementById('toCryptoAmount').value = '0.00';
+            document.getElementById('cryptoPrice').textContent = '$0.00';
+            document.getElementById('cryptoChange').textContent = '+0.00%';
         } finally {
             this.showLoading(false);
         }
     }
 
     async getExchangeRate(from, to) {
-        const response = await fetch(`https://api.exchangerate.host/convert?from=${from}&to=${to}&amount=1`);
-        const data = await response.json();
-        
-        if (!data.success) {
-            throw new Error('Failed to fetch exchange rate');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+        try {
+            const response = await fetch(`https://api.exchangerate.host/convert?from=${from}&to=${to}&amount=1`, {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error('API returned unsuccessful response');
+            }
+            
+            return data.result;
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new Error('Request timeout');
+            }
+            throw error;
         }
-        
-        return data.result;
     }
 
     async getCryptoPrice(cryptoId) {
-        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=usd`);
-        const data = await response.json();
-        
-        if (!data[cryptoId]) {
-            throw new Error('Failed to fetch crypto price');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        try {
+            const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=usd`, {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data[cryptoId]) {
+                throw new Error('Failed to fetch crypto price');
+            }
+            
+            return data[cryptoId].usd;
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new Error('Request timeout');
+            }
+            throw error;
         }
-        
-        return data[cryptoId].usd;
     }
 
     async getCryptoChange(cryptoId) {
-        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=usd&include_24hr_change=true`);
-        const data = await response.json();
-        
-        if (!data[cryptoId]) {
-            throw new Error('Failed to fetch crypto change');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        try {
+            const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=usd&include_24hr_change=true`, {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data[cryptoId]) {
+                throw new Error('Failed to fetch crypto change');
+            }
+            
+            return data[cryptoId].usd_24h_change;
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new Error('Request timeout');
+            }
+            throw error;
         }
-        
-        return data[cryptoId].usd_24h_change;
     }
 
     async getCryptoRate(fromCrypto, toCrypto) {
-        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${fromCrypto}&vs_currencies=${toCrypto}`);
-        const data = await response.json();
-        
-        if (!data[fromCrypto]) {
-            throw new Error('Failed to fetch crypto rate');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        try {
+            const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${fromCrypto}&vs_currencies=${toCrypto}`, {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data[fromCrypto]) {
+                throw new Error('Failed to fetch crypto rate');
+            }
+            
+            return data[fromCrypto][toCrypto];
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new Error('Request timeout');
+            }
+            throw error;
         }
-        
-        return data[fromCrypto][toCrypto];
     }
 
     async getCryptoToFiatRate(cryptoId, fiatCurrency) {
-        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=${fiatCurrency}`);
-        const data = await response.json();
-        
-        if (!data[cryptoId]) {
-            throw new Error('Failed to fetch crypto to fiat rate');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        try {
+            const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=${fiatCurrency}`, {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data[cryptoId]) {
+                throw new Error('Failed to fetch crypto to fiat rate');
+            }
+            
+            return data[cryptoId][fiatCurrency];
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new Error('Request timeout');
+            }
+            throw error;
         }
-        
-        return data[cryptoId][fiatCurrency];
     }
 
     swapCurrencies() {
@@ -254,7 +362,19 @@ class RateRadar {
             const toCurrency = document.getElementById('toCurrency').value;
 
             // Fetch historical data
-            const response = await fetch(`https://api.exchangerate.host/timeseries?start_date=${this.getDateDaysAgo(period)}&end_date=${this.getDateToday()}&base=${fromCurrency}&symbols=${toCurrency}`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+            const response = await fetch(`https://api.exchangerate.host/timeseries?start_date=${this.getDateDaysAgo(period)}&end_date=${this.getDateToday()}&base=${fromCurrency}&symbols=${toCurrency}`, {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
             const data = await response.json();
 
             if (!data.success) {
@@ -267,7 +387,9 @@ class RateRadar {
 
         } catch (error) {
             console.error('Error loading history:', error);
-            this.showError('Failed to load history. Please try again.');
+            this.showError('Failed to load history');
+            // Show empty chart
+            this.renderHistoryChart({ labels: [], values: [] }, period);
         } finally {
             this.showLoading(false);
         }
@@ -297,18 +419,18 @@ class RateRadar {
             data: {
                 labels: data.labels,
                 datasets: [{
-                    label: `Exchange Rate (${period} days)`,
+                    label: `${period}D`,
                     data: data.values,
-                    borderColor: 'rgba(255, 255, 255, 0.8)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    borderColor: 'rgba(59, 130, 246, 0.8)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     borderWidth: 2,
                     fill: true,
                     tension: 0.4,
-                    pointBackgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    pointBorderColor: 'rgba(255, 255, 255, 1)',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
+                    pointBackgroundColor: 'rgba(59, 130, 246, 0.9)',
+                    pointBorderColor: 'rgba(59, 130, 246, 1)',
+                    pointBorderWidth: 1,
+                    pointRadius: 2,
+                    pointHoverRadius: 4
                 }]
             },
             options: {
@@ -316,36 +438,31 @@ class RateRadar {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        labels: {
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            font: {
-                                size: 12
-                            }
-                        }
+                        display: false
                     }
                 },
                 scales: {
                     x: {
                         ticks: {
-                            color: 'rgba(255, 255, 255, 0.7)',
+                            color: 'rgba(0, 0, 0, 0.6)',
                             font: {
-                                size: 10
+                                size: 8
                             }
                         },
                         grid: {
-                            color: 'rgba(255, 255, 255, 0.1)',
+                            color: 'rgba(0, 0, 0, 0.1)',
                             drawBorder: false
                         }
                     },
                     y: {
                         ticks: {
-                            color: 'rgba(255, 255, 255, 0.7)',
+                            color: 'rgba(0, 0, 0, 0.6)',
                             font: {
-                                size: 10
+                                size: 8
                             }
                         },
                         grid: {
-                            color: 'rgba(255, 255, 255, 0.1)',
+                            color: 'rgba(0, 0, 0, 0.1)',
                             drawBorder: false
                         }
                     }
@@ -356,8 +473,8 @@ class RateRadar {
                 },
                 elements: {
                     point: {
-                        hoverBackgroundColor: 'rgba(255, 255, 255, 1)',
-                        hoverBorderColor: 'rgba(255, 255, 255, 1)'
+                        hoverBackgroundColor: 'rgba(59, 130, 246, 1)',
+                        hoverBorderColor: 'rgba(59, 130, 246, 1)'
                     }
                 }
             }
@@ -403,59 +520,17 @@ class RateRadar {
         const currentRate = this.exchangeRate;
 
         if (!currentRate) {
-            this.showError('Please convert a currency first to set an alert.');
+            this.showError('Convert a currency first');
             return;
         }
 
-        // Create alert modal with glass effect
-        const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-        modal.innerHTML = `
-            <div class="glass-card p-6 w-80 max-w-sm">
-                <h3 class="text-lg font-bold text-white mb-4">Set Rate Alert</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-white mb-2">Target Rate</label>
-                        <input type="number" id="targetRate" value="${currentRate.toFixed(4)}" step="0.0001" class="glass-input w-full px-3 py-2 text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-white mb-2">Alert Type</label>
-                        <select id="alertType" class="glass-input w-full px-3 py-2 text-white">
-                            <option value="above">Above</option>
-                            <option value="below">Below</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="flex space-x-3 mt-6">
-                    <button id="saveAlert" class="glass-button flex-1 py-2 px-4 text-white">Save Alert</button>
-                    <button id="cancelAlert" class="glass-button flex-1 py-2 px-4 text-white">Cancel</button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        // Event listeners for modal
-        document.getElementById('saveAlert').addEventListener('click', () => {
-            const targetRate = parseFloat(document.getElementById('targetRate').value);
-            const alertType = document.getElementById('alertType').value;
-            
-            this.saveAlert(fromCurrency, toCurrency, targetRate, alertType);
-            document.body.removeChild(modal);
-        });
-
-        document.getElementById('cancelAlert').addEventListener('click', () => {
-            document.body.removeChild(modal);
-        });
-    }
-
-    async saveAlert(fromCurrency, toCurrency, targetRate, alertType) {
+        // Simple alert creation without modal
         const alert = {
             id: Date.now(),
             fromCurrency,
             toCurrency,
-            targetRate,
-            alertType,
+            targetRate: currentRate,
+            alertType: 'below',
             createdAt: new Date().toISOString(),
             active: true
         };
@@ -465,7 +540,7 @@ class RateRadar {
             const alerts = result.alerts || [];
             alerts.push(alert);
             chrome.storage.sync.set({ alerts }, () => {
-                this.showSuccess('Alert saved successfully!');
+                this.showSuccess('Alert set!');
             });
         });
     }
@@ -481,12 +556,12 @@ class RateRadar {
             
             if (index > -1) {
                 favorites.splice(index, 1);
-                document.getElementById('favoriteBtn').textContent = '★ Favorite';
-                this.showSuccess('Removed from favorites');
+                document.getElementById('favoriteBtn').textContent = '★';
+                this.showSuccess('Removed');
             } else {
                 favorites.push(pair);
-                document.getElementById('favoriteBtn').textContent = '★ Favorited';
-                this.showSuccess('Added to favorites');
+                document.getElementById('favoriteBtn').textContent = '★';
+                this.showSuccess('Added');
             }
             
             chrome.storage.sync.set({ favorites });
@@ -501,7 +576,7 @@ class RateRadar {
             const pair = `${fromCurrency}/${toCurrency}`;
             
             if (favorites.includes(pair)) {
-                document.getElementById('favoriteBtn').textContent = '★ Favorited';
+                document.getElementById('favoriteBtn').textContent = '★';
             }
         });
     }
@@ -520,15 +595,15 @@ class RateRadar {
     }
 
     showError(message) {
-        // Create error notification with glass effect
+        // Create compact error notification
         const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 glass-card px-4 py-2 shadow-lg z-50';
+        notification.className = 'fixed top-2 right-2 liquid-glass px-3 py-2 shadow-lg z-50';
         notification.innerHTML = `
             <div class="flex items-center space-x-2">
-                <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <span class="text-white">${message}</span>
+                <span class="text-xs text-gray-700">${message}</span>
             </div>
         `;
         document.body.appendChild(notification);
@@ -537,19 +612,19 @@ class RateRadar {
             if (document.body.contains(notification)) {
                 document.body.removeChild(notification);
             }
-        }, 3000);
+        }, 2000);
     }
 
     showSuccess(message) {
-        // Create success notification with glass effect
+        // Create compact success notification
         const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 glass-card px-4 py-2 shadow-lg z-50';
+        notification.className = 'fixed top-2 right-2 liquid-glass px-3 py-2 shadow-lg z-50';
         notification.innerHTML = `
             <div class="flex items-center space-x-2">
-                <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
-                <span class="text-white">${message}</span>
+                <span class="text-xs text-gray-700">${message}</span>
             </div>
         `;
         document.body.appendChild(notification);
@@ -558,7 +633,7 @@ class RateRadar {
             if (document.body.contains(notification)) {
                 document.body.removeChild(notification);
             }
-        }, 3000);
+        }, 2000);
     }
 }
 
