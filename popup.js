@@ -1,10 +1,11 @@
-// RateRadar Popup JavaScript
+// RateRadar Popup JavaScript - Perfect UI/UX
 class RateRadar {
     constructor() {
         this.currentTab = 'converter';
         this.exchangeRate = 0;
         this.cryptoPrice = 0;
         this.historyChart = null;
+        this.isOnline = true;
         this.init();
     }
 
@@ -13,13 +14,14 @@ class RateRadar {
         this.loadCurrencies();
         this.switchTab('converter');
         this.loadFavorites();
+        this.checkConnection();
     }
 
     setupEventListeners() {
         // Tab switching
-        document.querySelectorAll('.glass-tab').forEach(btn => {
+        document.querySelectorAll('.tab-button').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const tab = e.target.dataset.tab;
+                const tab = e.currentTarget.dataset.tab;
                 this.switchTab(tab);
             });
         });
@@ -42,9 +44,9 @@ class RateRadar {
         document.getElementById('settingsBtn').addEventListener('click', () => this.openSettings());
 
         // History period buttons
-        document.querySelectorAll('[data-period]').forEach(btn => {
+        document.querySelectorAll('.period-button').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const period = e.target.dataset.period;
+                const period = e.currentTarget.dataset.period;
                 this.loadHistory(period);
             });
         });
@@ -53,16 +55,16 @@ class RateRadar {
     switchTab(tabName) {
         // Hide all tab contents
         document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.add('hidden');
+            content.classList.remove('active');
         });
 
         // Remove active class from all tab buttons
-        document.querySelectorAll('.glass-tab').forEach(btn => {
+        document.querySelectorAll('.tab-button').forEach(btn => {
             btn.classList.remove('active');
         });
 
         // Show selected tab content
-        document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+        document.getElementById(`${tabName}-tab`).classList.add('active');
         
         // Add active class to selected tab button
         document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
@@ -100,9 +102,11 @@ class RateRadar {
             document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
             
             this.exchangeRate = rate;
+            this.updateConnectionStatus(true);
         } catch (error) {
             console.error('Error converting currency:', error);
             this.showError('Network error - check connection');
+            this.updateConnectionStatus(false);
             // Show fallback data
             document.getElementById('toAmount').value = '0.00';
             document.getElementById('exchangeRate').textContent = `1 ${fromCurrency} = 0.00 ${toCurrency}`;
@@ -143,16 +147,19 @@ class RateRadar {
             
             document.getElementById('cryptoPrice').textContent = `$${price.toFixed(2)}`;
             document.getElementById('cryptoChange').textContent = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
-            document.getElementById('cryptoChange').className = `text-xs ${change >= 0 ? 'text-green-600' : 'text-red-600'}`;
+            document.getElementById('cryptoChange').className = `change-text ${change >= 0 ? 'positive' : 'negative'}`;
             
             this.cryptoPrice = price;
+            this.updateConnectionStatus(true);
         } catch (error) {
             console.error('Error converting crypto:', error);
             this.showError('Network error - check connection');
+            this.updateConnectionStatus(false);
             // Show fallback data
             document.getElementById('toCryptoAmount').value = '0.00';
             document.getElementById('cryptoPrice').textContent = '$0.00';
             document.getElementById('cryptoChange').textContent = '+0.00%';
+            document.getElementById('cryptoChange').className = 'change-text positive';
         } finally {
             this.showLoading(false);
         }
@@ -160,7 +167,7 @@ class RateRadar {
 
     async getExchangeRate(from, to) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
 
         try {
             const response = await fetch(`https://api.exchangerate.host/convert?from=${from}&to=${to}&amount=1`, {
@@ -179,11 +186,18 @@ class RateRadar {
                 throw new Error('API returned unsuccessful response');
             }
             
+            if (!data.result || typeof data.result !== 'number') {
+                throw new Error('Invalid exchange rate data received');
+            }
+            
             return data.result;
         } catch (error) {
             clearTimeout(timeoutId);
             if (error.name === 'AbortError') {
-                throw new Error('Request timeout');
+                throw new Error('Request timeout - please check your connection');
+            }
+            if (error.message.includes('Failed to fetch')) {
+                throw new Error('Network error - please check your internet connection');
             }
             throw error;
         }
@@ -191,7 +205,7 @@ class RateRadar {
 
     async getCryptoPrice(cryptoId) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         try {
             const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=usd`, {
@@ -222,7 +236,7 @@ class RateRadar {
 
     async getCryptoChange(cryptoId) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         try {
             const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=usd&include_24hr_change=true`, {
@@ -253,7 +267,7 @@ class RateRadar {
 
     async getCryptoRate(fromCrypto, toCrypto) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         try {
             const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${fromCrypto}&vs_currencies=${toCrypto}`, {
@@ -284,7 +298,7 @@ class RateRadar {
 
     async getCryptoToFiatRate(cryptoId, fiatCurrency) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         try {
             const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=${fiatCurrency}`, {
@@ -352,7 +366,7 @@ class RateRadar {
             this.showLoading(true);
             
             // Update active period button
-            document.querySelectorAll('[data-period]').forEach(btn => {
+            document.querySelectorAll('.period-button').forEach(btn => {
                 btn.classList.remove('active');
             });
             document.querySelector(`[data-period="${period}"]`).classList.add('active');
@@ -363,7 +377,7 @@ class RateRadar {
 
             // Fetch historical data
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            const timeoutId = setTimeout(() => controller.abort(), 12000);
 
             const response = await fetch(`https://api.exchangerate.host/timeseries?start_date=${this.getDateDaysAgo(period)}&end_date=${this.getDateToday()}&base=${fromCurrency}&symbols=${toCurrency}`, {
                 signal: controller.signal
@@ -384,10 +398,12 @@ class RateRadar {
             // Process data for chart
             const chartData = this.processHistoryData(data.rates, toCurrency);
             this.renderHistoryChart(chartData, period);
+            this.updateConnectionStatus(true);
 
         } catch (error) {
             console.error('Error loading history:', error);
             this.showError('Failed to load history');
+            this.updateConnectionStatus(false);
             // Show empty chart
             this.renderHistoryChart({ labels: [], values: [] }, period);
         } finally {
@@ -408,77 +424,100 @@ class RateRadar {
     }
 
     renderHistoryChart(data, period) {
-        const ctx = document.getElementById('historyChart').getContext('2d');
+        const canvas = document.getElementById('historyChart');
+        if (!canvas) {
+            console.error('History chart canvas not found');
+            return;
+        }
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            console.error('Could not get canvas context');
+            return;
+        }
         
         if (this.historyChart) {
-            this.historyChart.destroy();
+            try {
+                this.historyChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying previous chart:', error);
+            }
         }
 
-        this.historyChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.labels,
-                datasets: [{
-                    label: `${period}D`,
-                    data: data.values,
-                    borderColor: 'rgba(59, 130, 246, 0.8)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: 'rgba(59, 130, 246, 0.9)',
-                    pointBorderColor: 'rgba(59, 130, 246, 1)',
-                    pointBorderWidth: 1,
-                    pointRadius: 2,
-                    pointHoverRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+        try {
+            this.historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: `${period}D`,
+                        data: data.values,
+                        borderColor: 'rgba(102, 126, 234, 0.8)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgba(102, 126, 234, 0.9)',
+                        pointBorderColor: 'rgba(102, 126, 234, 1)',
+                        pointBorderWidth: 1,
+                        pointRadius: 2,
+                        pointHoverRadius: 4
+                    }]
                 },
-                scales: {
-                    x: {
-                        ticks: {
-                            color: 'rgba(0, 0, 0, 0.6)',
-                            font: {
-                                size: 8
-                            }
-                        },
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)',
-                            drawBorder: false
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     },
-                    y: {
-                        ticks: {
-                            color: 'rgba(0, 0, 0, 0.6)',
-                            font: {
-                                size: 8
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: 'rgba(26, 26, 26, 0.6)',
+                                font: {
+                                    size: 8
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(26, 26, 26, 0.1)',
+                                drawBorder: false
                             }
                         },
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)',
-                            drawBorder: false
+                        y: {
+                            ticks: {
+                                color: 'rgba(26, 26, 26, 0.6)',
+                                font: {
+                                    size: 8
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(26, 26, 26, 0.1)',
+                                drawBorder: false
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    elements: {
+                        point: {
+                            hoverBackgroundColor: 'rgba(102, 126, 234, 1)',
+                            hoverBorderColor: 'rgba(102, 126, 234, 1)'
                         }
                     }
-                },
-                interaction: {
-                    intersect: false,
-                    mode: 'index'
-                },
-                elements: {
-                    point: {
-                        hoverBackgroundColor: 'rgba(59, 130, 246, 1)',
-                        hoverBorderColor: 'rgba(59, 130, 246, 1)'
-                    }
                 }
+            });
+        } catch (error) {
+            console.error('Error creating chart:', error);
+            // Show a simple text message instead
+            const chartContainer = document.querySelector('.chart-container');
+            if (chartContainer) {
+                chartContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Chart data unavailable</div>';
             }
-        });
+        }
     }
 
     getDateDaysAgo(days) {
@@ -556,12 +595,10 @@ class RateRadar {
             
             if (index > -1) {
                 favorites.splice(index, 1);
-                document.getElementById('favoriteBtn').textContent = '★';
-                this.showSuccess('Removed');
+                this.showSuccess('Removed from favorites');
             } else {
                 favorites.push(pair);
-                document.getElementById('favoriteBtn').textContent = '★';
-                this.showSuccess('Added');
+                this.showSuccess('Added to favorites');
             }
             
             chrome.storage.sync.set({ favorites });
@@ -576,13 +613,48 @@ class RateRadar {
             const pair = `${fromCurrency}/${toCurrency}`;
             
             if (favorites.includes(pair)) {
-                document.getElementById('favoriteBtn').textContent = '★';
+                // Update UI to show it's favorited
+                console.log('Pair is favorited');
             }
         });
     }
 
     openSettings() {
         chrome.runtime.openOptionsPage();
+    }
+
+    checkConnection() {
+        // Test connection with a simple fetch
+        fetch('https://api.exchangerate.host/latest?base=USD&symbols=EUR', { 
+            method: 'HEAD',
+            mode: 'no-cors'
+        }).then(() => {
+            this.updateConnectionStatus(true);
+        }).catch(() => {
+            // Try a different approach - test with a simple GET request
+            fetch('https://api.exchangerate.host/latest?base=USD&symbols=EUR', {
+                method: 'GET',
+                signal: AbortSignal.timeout(5000) // 5 second timeout
+            }).then(() => {
+                this.updateConnectionStatus(true);
+            }).catch(() => {
+                this.updateConnectionStatus(false);
+            });
+        });
+    }
+
+    updateConnectionStatus(isOnline) {
+        this.isOnline = isOnline;
+        const statusIndicator = document.getElementById('connectionStatus');
+        const statusText = statusIndicator.querySelector('.status-text');
+        
+        if (isOnline) {
+            statusIndicator.className = 'status-indicator online';
+            statusText.textContent = 'Online';
+        } else {
+            statusIndicator.className = 'status-indicator offline';
+            statusText.textContent = 'Offline';
+        }
     }
 
     showLoading(show) {
@@ -597,13 +669,13 @@ class RateRadar {
     showError(message) {
         // Create compact error notification
         const notification = document.createElement('div');
-        notification.className = 'fixed top-2 right-2 liquid-glass px-3 py-2 shadow-lg z-50';
+        notification.className = 'notification error';
         notification.innerHTML = `
-            <div class="flex items-center space-x-2">
-                <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="notification-content">
+                <svg class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <span class="text-xs text-gray-700">${message}</span>
+                <span class="notification-text">${message}</span>
             </div>
         `;
         document.body.appendChild(notification);
@@ -612,19 +684,19 @@ class RateRadar {
             if (document.body.contains(notification)) {
                 document.body.removeChild(notification);
             }
-        }, 2000);
+        }, 3000);
     }
 
     showSuccess(message) {
         // Create compact success notification
         const notification = document.createElement('div');
-        notification.className = 'fixed top-2 right-2 liquid-glass px-3 py-2 shadow-lg z-50';
+        notification.className = 'notification success';
         notification.innerHTML = `
-            <div class="flex items-center space-x-2">
-                <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="notification-content">
+                <svg class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
-                <span class="text-xs text-gray-700">${message}</span>
+                <span class="notification-text">${message}</span>
             </div>
         `;
         document.body.appendChild(notification);
@@ -633,7 +705,7 @@ class RateRadar {
             if (document.body.contains(notification)) {
                 document.body.removeChild(notification);
             }
-        }, 2000);
+        }, 3000);
     }
 }
 

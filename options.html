@@ -4,53 +4,232 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RateRadar Settings</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
     <style>
+        /* Options page specific styles */
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8fafc;
+            margin: 0;
+            padding: 0;
         }
+        
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
+        
+        .options-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        
+        .options-header {
+            padding: 32px 0;
+            color: white;
+        }
+        
+        .options-content {
+            padding: 32px 0;
+        }
+        
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+        
+        @media (min-width: 1024px) {
+            .settings-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .settings-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            padding: 24px;
+        }
+        
+        .settings-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+        
+        .settings-group {
+            margin-bottom: 16px;
+        }
+        
+        .settings-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        
+        .settings-description {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+        
+        .settings-input {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .settings-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #d1d5db;
+            transition: 0.2s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.2s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: #667eea;
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+        
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .alerts-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .alert-item {
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: #f9fafb;
+        }
+        
+        .alert-item:hover {
+            background: #f3f4f6;
+        }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body>
     <!-- Header -->
-    <div class="gradient-bg text-white">
-        <div class="max-w-4xl mx-auto px-6 py-8">
-            <div class="flex items-center space-x-3 mb-6">
-                <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <span class="text-white font-bold text-xl">RR</span>
-                </div>
-                <div>
-                    <h1 class="text-3xl font-bold">RateRadar Settings</h1>
-                    <p class="text-white text-opacity-80">Configure your currency and crypto tracking preferences</p>
+    <div class="gradient-bg">
+        <div class="options-container">
+            <div class="options-header">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">RR</span>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold">RateRadar Settings</h1>
+                        <p class="text-white text-opacity-80">Configure your currency and crypto tracking preferences</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Main Content -->
-    <div class="max-w-4xl mx-auto px-6 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- General Settings -->
-            <div class="space-y-6">
-                <div class="bg-white rounded-lg shadow-sm border p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">General Settings</h2>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Theme</label>
-                            <select id="theme" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <div class="options-container">
+        <div class="options-content">
+            <div class="settings-grid">
+                <!-- General Settings -->
+                <div class="space-y-6">
+                    <div class="settings-card">
+                        <h2 class="settings-title">General Settings</h2>
+                        
+                        <div class="settings-group">
+                            <label class="settings-label">Theme</label>
+                            <select id="theme" class="settings-input">
                                 <option value="light">Light</option>
                                 <option value="dark">Dark</option>
                                 <option value="auto">Auto (System)</option>
                             </select>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Default Base Currency</label>
-                            <select id="defaultCurrency" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="settings-group">
+                            <label class="settings-label">Default Base Currency</label>
+                            <select id="defaultCurrency" class="settings-input">
                                 <option value="USD">USD - US Dollar</option>
                                 <option value="EUR">EUR - Euro</option>
                                 <option value="GBP">GBP - British Pound</option>
@@ -59,9 +238,9 @@
                             </select>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Refresh Interval</label>
-                            <select id="refreshInterval" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="settings-group">
+                            <label class="settings-label">Refresh Interval</label>
+                            <select id="refreshInterval" class="settings-input">
                                 <option value="1">1 minute</option>
                                 <option value="5">5 minutes</option>
                                 <option value="10">10 minutes</option>
@@ -69,191 +248,96 @@
                             </select>
                         </div>
                     </div>
-                </div>
 
-                <!-- Notifications -->
-                <div class="bg-white rounded-lg shadow-sm border p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Notifications</h2>
-                    
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <label class="text-sm font-medium text-gray-700">Enable Notifications</label>
-                                <p class="text-xs text-gray-500">Show desktop notifications for rate alerts</p>
+                    <!-- Notifications -->
+                    <div class="settings-card">
+                        <h2 class="settings-title">Notifications</h2>
+                        
+                        <div class="settings-group">
+                            <div class="flex-between">
+                                <div>
+                                    <label class="settings-label">Enable Notifications</label>
+                                    <p class="settings-description">Show desktop notifications for rate alerts</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notifications">
+                                    <span class="toggle-slider"></span>
+                                </label>
                             </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="notifications" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
                         </div>
 
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <label class="text-sm font-medium text-gray-700">Sound Alerts</label>
-                                <p class="text-xs text-gray-500">Play sound when alerts trigger</p>
+                        <div class="settings-group">
+                            <div class="flex-between">
+                                <div>
+                                    <label class="settings-label">Sound Alerts</label>
+                                    <p class="settings-description">Play sound when alerts trigger</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="soundAlerts">
+                                    <span class="toggle-slider"></span>
+                                </label>
                             </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="soundAlerts" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
                         </div>
 
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <label class="text-sm font-medium text-gray-700">Auto Refresh</label>
-                                <p class="text-xs text-gray-500">Automatically refresh rates in background</p>
+                        <div class="settings-group">
+                            <div class="flex-between">
+                                <div>
+                                    <label class="settings-label">Smart Shopping</label>
+                                    <p class="settings-description">Detect prices on shopping websites</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="smartShopping">
+                                    <span class="toggle-slider"></span>
+                                </label>
                             </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="autoRefresh" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Smart Shopping & Alerts -->
-            <div class="space-y-6">
-                <!-- Smart Shopping -->
-                <div class="bg-white rounded-lg shadow-sm border p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Smart Shopping</h2>
-                    
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <label class="text-sm font-medium text-gray-700">Enable Smart Shopping</label>
-                                <p class="text-xs text-gray-500">Detect prices on e-commerce sites and convert them</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="smartShopping" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <label class="text-sm font-medium text-gray-700">Price Highlighting</label>
-                                <p class="text-xs text-gray-500">Highlight detected prices on websites</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="priceHighlighting" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Shopping Alert Currency</label>
-                            <select id="shoppingCurrency" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="USD">USD - US Dollar</option>
-                                <option value="EUR">EUR - Euro</option>
-                                <option value="GBP">GBP - British Pound</option>
-                                <option value="NGN">NGN - Nigerian Naira</option>
-                                <option value="ZAR">ZAR - South African Rand</option>
-                            </select>
                         </div>
                     </div>
                 </div>
 
-                <!-- Alert Management -->
-                <div class="bg-white rounded-lg shadow-sm border p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Alert Management</h2>
-                    
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <label class="text-sm font-medium text-gray-700">Maximum Alerts</label>
-                                <p class="text-xs text-gray-500">Number of active alerts allowed</p>
-                            </div>
-                            <select id="maxAlerts" class="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="5">5 alerts</option>
-                                <option value="10">10 alerts</option>
-                                <option value="20">20 alerts</option>
-                                <option value="50">50 alerts</option>
-                            </select>
+                <!-- Alerts Management -->
+                <div class="space-y-6">
+                    <div class="settings-card">
+                        <h2 class="settings-title">Rate Alerts</h2>
+                        
+                        <div class="settings-group">
+                            <button id="addAlertBtn" class="btn btn-primary">Add New Alert</button>
                         </div>
-
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <label class="text-sm font-medium text-gray-700">Auto-deactivate Alerts</label>
-                                <p class="text-xs text-gray-500">Deactivate alerts after triggering</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="autoDeactivate" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
+                        
+                        <div class="alerts-list" id="alertsList">
+                            <!-- Alerts will be loaded here -->
                         </div>
+                    </div>
 
-                        <div>
-                            <button id="manageAlerts" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
-                                Manage Active Alerts
-                            </button>
+                    <!-- Data Management -->
+                    <div class="settings-card">
+                        <h2 class="settings-title">Data Management</h2>
+                        
+                        <div class="settings-group">
+                            <button id="exportDataBtn" class="btn btn-secondary">Export Data</button>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <button id="clearDataBtn" class="btn btn-secondary">Clear All Data</button>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <button id="resetSettingsBtn" class="btn btn-secondary">Reset to Defaults</button>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="settings-card">
+                        <h2 class="settings-title">Actions</h2>
+                        
+                        <div class="settings-group">
+                            <button id="saveSettingsBtn" class="btn btn-primary">Save Settings</button>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <div id="statusMessage" class="text-sm"></div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Data & Privacy -->
-                <div class="bg-white rounded-lg shadow-sm border p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Data & Privacy</h2>
-                    
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <label class="text-sm font-medium text-gray-700">Analytics</label>
-                                <p class="text-xs text-gray-500">Help improve RateRadar with anonymous usage data</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="analytics" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-
-                        <div>
-                            <button id="exportData" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
-                                Export My Data
-                            </button>
-                        </div>
-
-                        <div>
-                            <button id="clearData" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
-                                Clear All Data
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="mt-8 flex justify-end space-x-4">
-            <button id="resetSettings" class="bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-6 rounded-lg font-medium transition-colors">
-                Reset to Defaults
-            </button>
-            <button id="saveSettings" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg font-medium transition-colors">
-                Save Settings
-            </button>
-        </div>
-
-        <!-- Status Messages -->
-        <div id="statusMessage" class="mt-4 hidden">
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                <span id="statusText"></span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Alert Management Modal -->
-    <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-96 overflow-y-auto">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold">Manage Alerts</h3>
-                <button id="closeAlertModal" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            <div id="alertsList" class="space-y-2">
-                <!-- Alerts will be populated here -->
             </div>
         </div>
     </div>

@@ -8,154 +8,196 @@
     <script src="chart.js"></script>
 </head>
 <body>
-    <!-- Compact Header -->
-    <div class="liquid-glass m-2 mb-1">
-        <div class="flex items-center justify-between px-3 py-2">
+    <!-- Clean Header -->
+    <div class="liquid-glass header-section">
+        <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2">
-                <div class="w-6 h-6 liquid-glass flex items-center justify-center">
-                    <span class="text-xs font-bold text-gray-700">RR</span>
+                <div class="logo-container">
+                    <span class="logo-text">RR</span>
                 </div>
-                <span class="text-sm font-medium text-gray-700">RateRadar</span>
+                <div>
+                    <h1 class="app-title">RateRadar</h1>
+                    <p class="app-subtitle">Currency & Crypto</p>
+                </div>
             </div>
-            <button id="settingsBtn" class="glass-button p-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button id="settingsBtn" class="icon-button" title="Settings">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                 </svg>
             </button>
         </div>
     </div>
 
-    <!-- Compact Tabs -->
-    <div class="liquid-glass mx-2 mb-2">
-        <div class="flex p-1 space-x-1">
-            <button class="glass-tab flex-1 py-1 px-2 text-xs font-medium text-gray-700" data-tab="converter">
-                💱
+    <!-- Clean Tabs -->
+    <div class="liquid-glass tabs-section">
+        <div class="tabs-container">
+            <button class="tab-button active" data-tab="converter" title="Currency Converter">
+                <span class="tab-icon">💱</span>
+                <span class="tab-label">Convert</span>
             </button>
-            <button class="glass-tab flex-1 py-1 px-2 text-xs font-medium text-gray-700" data-tab="crypto">
-                🪙
+            <button class="tab-button" data-tab="crypto" title="Crypto Tracker">
+                <span class="tab-icon">🪙</span>
+                <span class="tab-label">Crypto</span>
             </button>
-            <button class="glass-tab flex-1 py-1 px-2 text-xs font-medium text-gray-700" data-tab="history">
-                📊
+            <button class="tab-button" data-tab="history" title="Rate History">
+                <span class="tab-icon">📊</span>
+                <span class="tab-label">History</span>
             </button>
         </div>
     </div>
 
-    <!-- Compact Content -->
-    <div class="px-2 pb-2">
+    <!-- Content Area -->
+    <div class="content-area">
         <!-- Currency Converter Tab -->
-        <div id="converter-tab" class="tab-content">
-            <div class="liquid-glass compact-section">
-                <!-- From -->
-                <div class="flex space-x-2 mb-2">
-                    <input type="number" id="fromAmount" placeholder="0.00" class="glass-input compact-input flex-1 px-2 text-xs">
-                    <select id="fromCurrency" class="glass-input compact-input px-2 text-xs">
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                        <option value="GBP">GBP</option>
-                        <option value="NGN">NGN</option>
-                        <option value="ZAR">ZAR</option>
-                    </select>
+        <div id="converter-tab" class="tab-content active">
+            <div class="liquid-glass content-card">
+                <!-- From Section -->
+                <div class="input-section">
+                    <label class="input-label">From</label>
+                    <div class="input-group">
+                        <input type="number" id="fromAmount" placeholder="0.00" class="amount-input" step="0.01">
+                        <select id="fromCurrency" class="currency-select">
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="GBP">GBP</option>
+                            <option value="NGN">NGN</option>
+                            <option value="ZAR">ZAR</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Swap Button -->
-                <div class="flex justify-center mb-2">
-                    <button id="swapBtn" class="glass-button p-1 rounded-full">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="swap-container">
+                    <button id="swapBtn" class="swap-button" title="Swap currencies">
+                        <svg class="swap-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
                         </svg>
                     </button>
                 </div>
 
-                <!-- To -->
-                <div class="flex space-x-2 mb-2">
-                    <input type="number" id="toAmount" placeholder="0.00" readonly class="glass-input compact-input flex-1 px-2 text-xs">
-                    <select id="toCurrency" class="glass-input compact-input px-2 text-xs">
-                        <option value="EUR">EUR</option>
-                        <option value="USD">USD</option>
-                        <option value="GBP">GBP</option>
-                        <option value="NGN">NGN</option>
-                        <option value="ZAR">ZAR</option>
-                    </select>
+                <!-- To Section -->
+                <div class="input-section">
+                    <label class="input-label">To</label>
+                    <div class="input-group">
+                        <input type="number" id="toAmount" placeholder="0.00" class="amount-input" readonly>
+                        <select id="toCurrency" class="currency-select">
+                            <option value="EUR">EUR</option>
+                            <option value="USD">USD</option>
+                            <option value="GBP">GBP</option>
+                            <option value="NGN">NGN</option>
+                            <option value="ZAR">ZAR</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Rate Display -->
-                <div class="text-center mb-2">
-                    <p id="exchangeRate" class="text-xs font-medium text-gray-700">1 USD = 0.00 EUR</p>
-                    <p id="lastUpdated" class="text-xs text-gray-500">--</p>
+                <div class="rate-display">
+                    <div class="rate-info">
+                        <span id="exchangeRate" class="rate-text">1 USD = 0.00 EUR</span>
+                        <span id="lastUpdated" class="update-time">--</span>
+                    </div>
                 </div>
 
-                <!-- Actions -->
-                <div class="flex space-x-1">
-                    <button id="setAlertBtn" class="glass-button compact-button flex-1 text-xs">
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button id="setAlertBtn" class="action-button primary" title="Set rate alert">
+                        <svg class="button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
                         Alert
                     </button>
-                    <button id="favoriteBtn" class="glass-button compact-button flex-1 text-xs">
-                        ★
+                    <button id="favoriteBtn" class="action-button secondary" title="Add to favorites">
+                        <svg class="button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                        </svg>
+                        Favorite
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- Crypto Tab -->
-        <div id="crypto-tab" class="tab-content hidden">
-            <div class="liquid-glass compact-section">
+        <div id="crypto-tab" class="tab-content">
+            <div class="liquid-glass content-card">
                 <!-- From Crypto -->
-                <div class="flex space-x-2 mb-2">
-                    <input type="number" id="fromCryptoAmount" placeholder="0.00" class="glass-input compact-input flex-1 px-2 text-xs">
-                    <select id="fromCrypto" class="glass-input compact-input px-2 text-xs">
-                        <option value="bitcoin">BTC</option>
-                        <option value="ethereum">ETH</option>
-                        <option value="cardano">ADA</option>
-                        <option value="solana">SOL</option>
-                    </select>
+                <div class="input-section">
+                    <label class="input-label">From</label>
+                    <div class="input-group">
+                        <input type="number" id="fromCryptoAmount" placeholder="0.00" class="amount-input" step="0.000001">
+                        <select id="fromCrypto" class="currency-select">
+                            <option value="bitcoin">BTC</option>
+                            <option value="ethereum">ETH</option>
+                            <option value="cardano">ADA</option>
+                            <option value="solana">SOL</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Swap Button -->
-                <div class="flex justify-center mb-2">
-                    <button id="swapCryptoBtn" class="glass-button p-1 rounded-full">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="swap-container">
+                    <button id="swapCryptoBtn" class="swap-button" title="Swap cryptocurrencies">
+                        <svg class="swap-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
                         </svg>
                     </button>
                 </div>
 
                 <!-- To Crypto -->
-                <div class="flex space-x-2 mb-2">
-                    <input type="number" id="toCryptoAmount" placeholder="0.00" readonly class="glass-input compact-input flex-1 px-2 text-xs">
-                    <select id="toCrypto" class="glass-input compact-input px-2 text-xs">
-                        <option value="usd">USD</option>
-                        <option value="eur">EUR</option>
-                        <option value="ngn">NGN</option>
-                        <option value="ethereum">ETH</option>
-                    </select>
+                <div class="input-section">
+                    <label class="input-label">To</label>
+                    <div class="input-group">
+                        <input type="number" id="toCryptoAmount" placeholder="0.00" class="amount-input" readonly>
+                        <select id="toCrypto" class="currency-select">
+                            <option value="usd">USD</option>
+                            <option value="eur">EUR</option>
+                            <option value="ngn">NGN</option>
+                            <option value="ethereum">ETH</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Price Display -->
-                <div class="text-center">
-                    <p id="cryptoPrice" class="text-xs font-medium text-gray-700">$0.00</p>
-                    <p id="cryptoChange" class="text-xs text-green-600">+0.00%</p>
+                <div class="crypto-price-display">
+                    <div class="price-info">
+                        <span id="cryptoPrice" class="price-text">$0.00</span>
+                        <span id="cryptoChange" class="change-text positive">+0.00%</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- History Tab -->
-        <div id="history-tab" class="tab-content hidden">
-            <div class="liquid-glass compact-section">
-                <div class="flex space-x-1 mb-2">
-                    <button class="glass-button px-2 py-1 text-xs" data-period="7">7D</button>
-                    <button class="glass-button px-2 py-1 text-xs" data-period="30">30D</button>
-                    <button class="glass-button px-2 py-1 text-xs" data-period="90">90D</button>
+        <div id="history-tab" class="tab-content">
+            <div class="liquid-glass content-card">
+                <div class="history-header">
+                    <h3 class="history-title">Rate History</h3>
+                    <div class="period-buttons">
+                        <button class="period-button active" data-period="7">7D</button>
+                        <button class="period-button" data-period="30">30D</button>
+                        <button class="period-button" data-period="90">90D</button>
+                    </div>
                 </div>
-                <canvas id="historyChart" width="280" height="120"></canvas>
+                <div class="chart-container">
+                    <canvas id="historyChart" width="280" height="120"></canvas>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div id="connectionStatus" class="status-indicator online">
+            <span class="status-dot"></span>
+            <span class="status-text">Online</span>
+        </div>
+    </div>
+
     <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
-        <div class="liquid-glass p-3 flex items-center space-x-2">
-            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-            <span class="text-xs text-gray-700">Loading...</span>
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <span class="loading-text">Loading...</span>
         </div>
     </div>
 
