@@ -6,6 +6,16 @@ class RateRadar {
         this.cryptoPrice = 0;
         this.historyChart = null;
         this.isOnline = true;
+        this.cachedRates = {
+            'USD/EUR': 0.85,
+            'EUR/USD': 1.18,
+            'USD/GBP': 0.73,
+            'GBP/USD': 1.37,
+            'USD/NGN': 410.0,
+            'NGN/USD': 0.0024,
+            'USD/ZAR': 15.2,
+            'ZAR/USD': 0.066
+        };
         this.init();
     }
 
@@ -105,12 +115,24 @@ class RateRadar {
             this.updateConnectionStatus(true);
         } catch (error) {
             console.error('Error converting currency:', error);
-            this.showError('Network error - check connection');
-            this.updateConnectionStatus(false);
-            // Show fallback data
-            document.getElementById('toAmount').value = '0.00';
-            document.getElementById('exchangeRate').textContent = `1 ${fromCurrency} = 0.00 ${toCurrency}`;
-            document.getElementById('lastUpdated').textContent = 'Offline';
+            
+            // Try to use cached rate as last resort
+            const cachedRate = this.cachedRates[`${fromCurrency}/${toCurrency}`];
+            if (cachedRate) {
+                const convertedAmount = fromAmount * cachedRate;
+                document.getElementById('toAmount').value = convertedAmount.toFixed(2);
+                document.getElementById('exchangeRate').textContent = `1 ${fromCurrency} = ${cachedRate.toFixed(4)} ${toCurrency} (cached)`;
+                document.getElementById('lastUpdated').textContent = 'Offline - using cached rate';
+                this.exchangeRate = cachedRate;
+                this.showError('Using cached rate - check connection');
+            } else {
+                this.showError('Network error - check connection');
+                this.updateConnectionStatus(false);
+                // Show fallback data
+                document.getElementById('toAmount').value = '0.00';
+                document.getElementById('exchangeRate').textContent = `1 ${fromCurrency} = 0.00 ${toCurrency}`;
+                document.getElementById('lastUpdated').textContent = 'Offline';
+            }
         } finally {
             this.showLoading(false);
         }
@@ -167,11 +189,16 @@ class RateRadar {
 
     async getExchangeRate(from, to) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
         try {
+            // Try the main API first
             const response = await fetch(`https://api.exchangerate.host/convert?from=${from}&to=${to}&amount=1`, {
-                signal: controller.signal
+                signal: controller.signal,
+                headers: {
+                    'Accept': 'application/json',
+                    'User-Agent': 'RateRadar/1.0'
+                }
             });
             
             clearTimeout(timeoutId);
@@ -190,9 +217,37 @@ class RateRadar {
                 throw new Error('Invalid exchange rate data received');
             }
             
+            // Cache the successful rate
+            this.cachedRates[`${from}/${to}`] = data.result;
+            
             return data.result;
         } catch (error) {
             clearTimeout(timeoutId);
+            
+            // Try fallback API
+            try {
+                const fallbackResponse = await fetch(`https://api.freecurrencyapi.com/v1/latest?apikey=fca_live_demo&base_currency=${from}&currencies=${to}`, {
+                    signal: AbortSignal.timeout(5000)
+                });
+                
+                if (fallbackResponse.ok) {
+                    const fallbackData = await fallbackResponse.json();
+                    if (fallbackData.data && fallbackData.data[to]) {
+                        this.cachedRates[`${from}/${to}`] = fallbackData.data[to];
+                        return fallbackData.data[to];
+                    }
+                }
+            } catch (fallbackError) {
+                console.warn('Fallback API also failed:', fallbackError);
+            }
+            
+            // Use cached rate if available
+            const cachedRate = this.cachedRates[`${from}/${to}`];
+            if (cachedRate) {
+                console.log('Using cached rate for', `${from}/${to}:`, cachedRate);
+                return cachedRate;
+            }
+            
             if (error.name === 'AbortError') {
                 throw new Error('Request timeout - please check your connection');
             }
@@ -444,6 +499,13 @@ class RateRadar {
             }
         }
 
+        // Check if Chart is available
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js is not available');
+            this.renderSimpleChart(ctx, data, period);
+            return;
+        }
+
         try {
             this.historyChart = new Chart(ctx, {
                 type: 'line',
@@ -512,12 +574,64 @@ class RateRadar {
             });
         } catch (error) {
             console.error('Error creating chart:', error);
-            // Show a simple text message instead
-            const chartContainer = document.querySelector('.chart-container');
-            if (chartContainer) {
-                chartContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Chart data unavailable</div>';
-            }
+            this.renderSimpleChart(ctx, data, period);
         }
+    }
+
+    renderSimpleChart(ctx, data, period) {
+        // Simple fallback chart rendering
+        const canvas = ctx.canvas;
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        if (!data.values || data.values.length === 0) {
+            // Show "No data" message
+            ctx.fillStyle = 'rgba(102, 126, 234, 0.6)';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('No data available', width / 2, height / 2);
+            return;
+        }
+        
+        // Draw simple line chart
+        const padding = 20;
+        const chartWidth = width - 2 * padding;
+        const chartHeight = height - 2 * padding;
+        
+        const minValue = Math.min(...data.values);
+        const maxValue = Math.max(...data.values);
+        const range = maxValue - minValue || 1;
+        
+        ctx.strokeStyle = 'rgba(102, 126, 234, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        data.values.forEach((value, index) => {
+            const x = padding + (index * chartWidth / (data.values.length - 1));
+            const y = height - padding - ((value - minValue) * chartHeight / range);
+            
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+        
+        ctx.stroke();
+        
+        // Draw points
+        ctx.fillStyle = 'rgba(102, 126, 234, 0.9)';
+        data.values.forEach((value, index) => {
+            const x = padding + (index * chartWidth / (data.values.length - 1));
+            const y = height - padding - ((value - minValue) * chartHeight / range);
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, 2 * Math.PI);
+            ctx.fill();
+        });
     }
 
     getDateDaysAgo(days) {
@@ -624,23 +738,42 @@ class RateRadar {
     }
 
     checkConnection() {
-        // Test connection with a simple fetch
-        fetch('https://api.exchangerate.host/latest?base=USD&symbols=EUR', { 
-            method: 'HEAD',
-            mode: 'no-cors'
-        }).then(() => {
-            this.updateConnectionStatus(true);
-        }).catch(() => {
-            // Try a different approach - test with a simple GET request
-            fetch('https://api.exchangerate.host/latest?base=USD&symbols=EUR', {
-                method: 'GET',
-                signal: AbortSignal.timeout(5000) // 5 second timeout
-            }).then(() => {
-                this.updateConnectionStatus(true);
-            }).catch(() => {
+        // Test connection with multiple endpoints
+        const testEndpoints = [
+            'https://api.exchangerate.host/latest?base=USD&symbols=EUR',
+            'https://api.freecurrencyapi.com/v1/latest?apikey=fca_live_demo&base_currency=USD&currencies=EUR'
+        ];
+        
+        let connectionTested = false;
+        
+        const testConnection = async (url) => {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(3000) // 3 second timeout
+                });
+                
+                if (response.ok) {
+                    this.updateConnectionStatus(true);
+                    connectionTested = true;
+                    return true;
+                }
+            } catch (error) {
+                console.warn('Connection test failed for:', url, error);
+            }
+            return false;
+        };
+        
+        // Try each endpoint
+        Promise.any(testEndpoints.map(testConnection))
+            .then(() => {
+                if (!connectionTested) {
+                    this.updateConnectionStatus(true);
+                }
+            })
+            .catch(() => {
                 this.updateConnectionStatus(false);
             });
-        });
     }
 
     updateConnectionStatus(isOnline) {
