@@ -11,33 +11,169 @@
             width: 400px;
             min-height: 500px;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        .currency-input {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
         }
-        .crypto-input {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+
+        /* Liquid glass background effects */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
         }
-        .rate-history {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.05) 0%, transparent 50%, rgba(255,255,255,0.05) 100%);
+            pointer-events: none;
         }
-        .tab-active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(10px, -10px) rotate(1deg); }
+            50% { transform: translate(-5px, 5px) rotate(-1deg); }
+            75% { transform: translate(-10px, -5px) rotate(0.5deg); }
+        }
+
+        /* Glass morphism containers */
+        .glass-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
             color: white;
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-button {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .glass-tab {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .glass-tab.active {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 16px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Floating particles effect */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: particle-float 15s infinite linear;
+        }
+
+        @keyframes particle-float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="relative">
+    <!-- Floating particles -->
+    <div class="particles" id="particles"></div>
+
     <!-- Header -->
-    <div class="bg-white shadow-sm border-b">
+    <div class="glass-container m-4 mb-0">
         <div class="flex items-center justify-between px-4 py-3">
-            <div class="flex items-center space-x-2">
-                <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                    <span class="text-white font-bold text-sm">RR</span>
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 glass-card flex items-center justify-center">
+                    <span class="text-white font-bold text-lg">RR</span>
                 </div>
-                <h1 class="text-lg font-bold text-gray-900">RateRadar</h1>
+                <div>
+                    <h1 class="text-xl font-bold text-white">RateRadar</h1>
+                    <p class="text-xs text-white text-opacity-70">Currency & Crypto Tracker</p>
+                </div>
             </div>
-            <button id="settingsBtn" class="text-gray-400 hover:text-gray-600">
+            <button id="settingsBtn" class="glass-button p-2 text-white hover:text-opacity-80 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -47,29 +183,31 @@
     </div>
 
     <!-- Tab Navigation -->
-    <div class="flex bg-white border-b">
-        <button class="tab-btn flex-1 py-3 px-4 text-sm font-medium text-gray-600 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300" data-tab="converter">
-            💱 Converter
-        </button>
-        <button class="tab-btn flex-1 py-3 px-4 text-sm font-medium text-gray-600 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300" data-tab="crypto">
-            🪙 Crypto
-        </button>
-        <button class="tab-btn flex-1 py-3 px-4 text-sm font-medium text-gray-600 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300" data-tab="history">
-            📊 History
-        </button>
+    <div class="glass-container mx-4 mb-4">
+        <div class="flex p-1">
+            <button class="glass-tab flex-1 py-3 px-4 text-sm font-medium text-white transition-all" data-tab="converter">
+                💱 Converter
+            </button>
+            <button class="glass-tab flex-1 py-3 px-4 text-sm font-medium text-white transition-all" data-tab="crypto">
+                🪙 Crypto
+            </button>
+            <button class="glass-tab flex-1 py-3 px-4 text-sm font-medium text-white transition-all" data-tab="history">
+                📊 History
+            </button>
+        </div>
     </div>
 
     <!-- Tab Content -->
-    <div class="p-4">
+    <div class="px-4 pb-4">
         <!-- Currency Converter Tab -->
         <div id="converter-tab" class="tab-content">
             <div class="space-y-4">
                 <!-- From Currency -->
-                <div class="currency-input rounded-lg p-4 text-white">
-                    <label class="block text-sm font-medium mb-2">From</label>
+                <div class="glass-card p-4">
+                    <label class="block text-sm font-medium text-white mb-2">From</label>
                     <div class="flex space-x-2">
-                        <input type="number" id="fromAmount" placeholder="0.00" class="flex-1 bg-white bg-opacity-20 rounded px-3 py-2 text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50">
-                        <select id="fromCurrency" class="bg-white bg-opacity-20 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50">
+                        <input type="number" id="fromAmount" placeholder="0.00" class="glass-input flex-1 px-3 py-2 placeholder-white placeholder-opacity-70 focus:outline-none">
+                        <select id="fromCurrency" class="glass-input px-3 py-2 focus:outline-none">
                             <option value="USD">USD</option>
                             <option value="EUR">EUR</option>
                             <option value="GBP">GBP</option>
@@ -81,19 +219,19 @@
 
                 <!-- Swap Button -->
                 <div class="flex justify-center">
-                    <button id="swapBtn" class="bg-gray-200 hover:bg-gray-300 rounded-full p-2 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button id="swapBtn" class="glass-button p-3 rounded-full transition-all hover:scale-110">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
                         </svg>
                     </button>
                 </div>
 
                 <!-- To Currency -->
-                <div class="currency-input rounded-lg p-4 text-white">
-                    <label class="block text-sm font-medium mb-2">To</label>
+                <div class="glass-card p-4">
+                    <label class="block text-sm font-medium text-white mb-2">To</label>
                     <div class="flex space-x-2">
-                        <input type="number" id="toAmount" placeholder="0.00" readonly class="flex-1 bg-white bg-opacity-20 rounded px-3 py-2 text-white placeholder-white placeholder-opacity-70">
-                        <select id="toCurrency" class="bg-white bg-opacity-20 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50">
+                        <input type="number" id="toAmount" placeholder="0.00" readonly class="glass-input flex-1 px-3 py-2 placeholder-white placeholder-opacity-70">
+                        <select id="toCurrency" class="glass-input px-3 py-2 focus:outline-none">
                             <option value="EUR">EUR</option>
                             <option value="USD">USD</option>
                             <option value="GBP">GBP</option>
@@ -104,20 +242,20 @@
                 </div>
 
                 <!-- Exchange Rate Display -->
-                <div class="bg-white rounded-lg p-4 shadow-sm">
+                <div class="glass-card p-4">
                     <div class="text-center">
-                        <p class="text-sm text-gray-600">Exchange Rate</p>
-                        <p id="exchangeRate" class="text-2xl font-bold text-gray-900">1 USD = 0.00 EUR</p>
-                        <p id="lastUpdated" class="text-xs text-gray-500 mt-1">Last updated: --</p>
+                        <p class="text-sm text-white text-opacity-70">Exchange Rate</p>
+                        <p id="exchangeRate" class="text-2xl font-bold text-white">1 USD = 0.00 EUR</p>
+                        <p id="lastUpdated" class="text-xs text-white text-opacity-50 mt-1">Last updated: --</p>
                     </div>
                 </div>
 
                 <!-- Quick Actions -->
                 <div class="flex space-x-2">
-                    <button id="setAlertBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+                    <button id="setAlertBtn" class="glass-button flex-1 py-2 px-4 text-white text-sm font-medium">
                         Set Alert
                     </button>
-                    <button id="favoriteBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+                    <button id="favoriteBtn" class="glass-button flex-1 py-2 px-4 text-white text-sm font-medium">
                         ★ Favorite
                     </button>
                 </div>
@@ -128,11 +266,11 @@
         <div id="crypto-tab" class="tab-content hidden">
             <div class="space-y-4">
                 <!-- From Crypto -->
-                <div class="crypto-input rounded-lg p-4 text-white">
-                    <label class="block text-sm font-medium mb-2">From</label>
+                <div class="glass-card p-4">
+                    <label class="block text-sm font-medium text-white mb-2">From</label>
                     <div class="flex space-x-2">
-                        <input type="number" id="fromCryptoAmount" placeholder="0.00" class="flex-1 bg-white bg-opacity-20 rounded px-3 py-2 text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50">
-                        <select id="fromCrypto" class="bg-white bg-opacity-20 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50">
+                        <input type="number" id="fromCryptoAmount" placeholder="0.00" class="glass-input flex-1 px-3 py-2 placeholder-white placeholder-opacity-70 focus:outline-none">
+                        <select id="fromCrypto" class="glass-input px-3 py-2 focus:outline-none">
                             <option value="bitcoin">Bitcoin (BTC)</option>
                             <option value="ethereum">Ethereum (ETH)</option>
                             <option value="cardano">Cardano (ADA)</option>
@@ -143,19 +281,19 @@
 
                 <!-- Swap Button -->
                 <div class="flex justify-center">
-                    <button id="swapCryptoBtn" class="bg-gray-200 hover:bg-gray-300 rounded-full p-2 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button id="swapCryptoBtn" class="glass-button p-3 rounded-full transition-all hover:scale-110">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
                         </svg>
                     </button>
                 </div>
 
                 <!-- To Currency/Crypto -->
-                <div class="crypto-input rounded-lg p-4 text-white">
-                    <label class="block text-sm font-medium mb-2">To</label>
+                <div class="glass-card p-4">
+                    <label class="block text-sm font-medium text-white mb-2">To</label>
                     <div class="flex space-x-2">
-                        <input type="number" id="toCryptoAmount" placeholder="0.00" readonly class="flex-1 bg-white bg-opacity-20 rounded px-3 py-2 text-white placeholder-white placeholder-opacity-70">
-                        <select id="toCrypto" class="bg-white bg-opacity-20 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50">
+                        <input type="number" id="toCryptoAmount" placeholder="0.00" readonly class="glass-input flex-1 px-3 py-2 placeholder-white placeholder-opacity-70">
+                        <select id="toCrypto" class="glass-input px-3 py-2 focus:outline-none">
                             <option value="usd">USD</option>
                             <option value="eur">EUR</option>
                             <option value="ngn">NGN</option>
@@ -165,11 +303,11 @@
                 </div>
 
                 <!-- Crypto Price Display -->
-                <div class="bg-white rounded-lg p-4 shadow-sm">
+                <div class="glass-card p-4">
                     <div class="text-center">
-                        <p class="text-sm text-gray-600">Current Price</p>
-                        <p id="cryptoPrice" class="text-2xl font-bold text-gray-900">$0.00</p>
-                        <p id="cryptoChange" class="text-xs text-green-500 mt-1">+0.00% (24h)</p>
+                        <p class="text-sm text-white text-opacity-70">Current Price</p>
+                        <p id="cryptoPrice" class="text-2xl font-bold text-white">$0.00</p>
+                        <p id="cryptoChange" class="text-xs text-green-400 mt-1">+0.00% (24h)</p>
                     </div>
                 </div>
             </div>
@@ -178,12 +316,12 @@
         <!-- History Tab -->
         <div id="history-tab" class="tab-content hidden">
             <div class="space-y-4">
-                <div class="rate-history rounded-lg p-4 text-white">
-                    <h3 class="text-lg font-medium mb-4">Rate History</h3>
+                <div class="glass-card p-4">
+                    <h3 class="text-lg font-medium text-white mb-4">Rate History</h3>
                     <div class="flex space-x-2 mb-4">
-                        <button class="period-btn bg-white bg-opacity-20 rounded px-3 py-1 text-sm font-medium" data-period="7">7D</button>
-                        <button class="period-btn bg-white bg-opacity-20 rounded px-3 py-1 text-sm font-medium" data-period="30">30D</button>
-                        <button class="period-btn bg-white bg-opacity-20 rounded px-3 py-1 text-sm font-medium" data-period="90">90D</button>
+                        <button class="glass-button px-3 py-1 text-sm font-medium text-white" data-period="7">7D</button>
+                        <button class="glass-button px-3 py-1 text-sm font-medium text-white" data-period="30">30D</button>
+                        <button class="glass-button px-3 py-1 text-sm font-medium text-white" data-period="90">90D</button>
                     </div>
                     <canvas id="historyChart" width="350" height="200"></canvas>
                 </div>
@@ -192,13 +330,34 @@
     </div>
 
     <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-lg p-4 flex items-center space-x-3">
-            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span class="text-gray-700">Loading...</span>
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="glass-card p-4 flex items-center space-x-3">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+            <span class="text-white">Loading...</span>
         </div>
     </div>
 
     <script src="popup.js"></script>
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 15;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.width = Math.random() * 4 + 2 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Initialize particles when page loads
+        document.addEventListener('DOMContentLoaded', createParticles);
+    </script>
 </body>
 </html> 

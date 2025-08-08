@@ -1,0 +1,35 @@
+{
+  "name": "rateradar",
+  "version": "1.0.0",
+  "description": "Track, convert, and monitor currency and crypto exchange rates—anytime, anywhere.",
+  "main": "popup.html",
+  "scripts": {
+    "build": "echo 'No build process needed for Chrome extension'",
+    "dev": "echo 'Load extension in Chrome developer mode'",
+    "test": "echo 'No tests configured yet'",
+    "lint": "echo 'No linter configured yet'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "currency-converter",
+    "crypto",
+    "exchange-rates",
+    "alerts",
+    "shopping"
+  ],
+  "author": "RateRadar Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/rateradar.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/rateradar/issues"
+  },
+  "homepage": "https://github.com/yourusername/rateradar#readme",
+  "devDependencies": {},
+  "dependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 
