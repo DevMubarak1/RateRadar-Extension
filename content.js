@@ -250,11 +250,10 @@ class RateRadarContent {
 
     async convertPrice(priceData, targetCurrency, displayElement) {
         try {
-            const response = await fetch(`https://api.exchangerate.host/convert?from=${priceData.currency}&to=${targetCurrency}&amount=${priceData.amount}`);
-            const data = await response.json();
-            
-            if (data.success) {
-                displayElement.textContent = `${targetCurrency} ${data.result.toFixed(2)}`;
+            const rate = await this.getExchangeRate(priceData.currency, targetCurrency);
+            if (rate !== null) {
+                const convertedAmount = priceData.amount * rate;
+                displayElement.textContent = `${targetCurrency} ${convertedAmount.toFixed(2)}`;
             } else {
                 displayElement.textContent = 'Conversion failed';
             }
@@ -266,21 +265,20 @@ class RateRadarContent {
 
     async setPriceAlert(priceData, targetCurrency) {
         try {
-            const response = await fetch(`https://api.exchangerate.host/convert?from=${priceData.currency}&to=${targetCurrency}&amount=${priceData.amount}`);
-            const data = await response.json();
-            
-            if (data.success) {
+            const rate = await this.getExchangeRate(priceData.currency, targetCurrency);
+            if (rate !== null) {
+                const convertedAmount = priceData.amount * rate;
                 const alert = {
                     id: Date.now(),
                     fromCurrency: priceData.currency,
                     toCurrency: targetCurrency,
-                    targetRate: data.result / priceData.amount, // Rate per unit
-                    alertType: 'below', // Alert when price drops
+                    targetRate: rate,
+                    alertType: 'below',
                     createdAt: new Date().toISOString(),
                     active: true,
                     isPriceAlert: true,
                     originalPrice: priceData.amount,
-                    targetPrice: data.result
+                    targetPrice: convertedAmount
                 };
 
                 // Send to background script
@@ -291,11 +289,83 @@ class RateRadarContent {
 
                 // Show success message
                 this.showNotification('Price alert set successfully!', 'success');
+            } else {
+                this.showNotification('Failed to get exchange rate', 'error');
             }
         } catch (error) {
             console.error('Error setting price alert:', error);
             this.showNotification('Failed to set price alert', 'error');
         }
+    }
+
+    async getExchangeRate(fromCurrency, toCurrency) {
+        const exchangeAPIs = [
+            'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies',
+            'https://latest.currency-api.pages.dev/v1/currencies',
+            'https://api.exchangerate-api.com/v4/latest'
+        ];
+
+        const from = fromCurrency.toLowerCase();
+        const to = toCurrency.toLowerCase();
+
+        // Try each API endpoint
+        for (let i = 0; i < exchangeAPIs.length; i++) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+                
+                let response, data;
+                
+                if (exchangeAPIs[i].includes('fawazahmed0') || exchangeAPIs[i].includes('currency-api')) {
+                    const url = `${exchangeAPIs[i]}/${from}.json`;
+                    response = await fetch(url, { 
+                        signal: controller.signal,
+                        headers: {
+                            'Accept': 'application/json',
+                            'User-Agent': 'RateRadar/1.0'
+                        }
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
+                    data = await response.json();
+                    if (data[from] && data[from][to]) {
+                        console.log(`Content: Successfully got rate from API ${i + 1}`);
+                        return data[from][to];
+                    }
+                } else if (exchangeAPIs[i].includes('exchangerate-api')) {
+                    const url = `${exchangeAPIs[i]}/${from.toUpperCase()}`;
+                    response = await fetch(url, { 
+                        signal: controller.signal,
+                        headers: {
+                            'Accept': 'application/json',
+                            'User-Agent': 'RateRadar/1.0'
+                        }
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
+                    data = await response.json();
+                    if (data.rates && data.rates[to.toUpperCase()]) {
+                        console.log(`Content: Successfully got rate from API ${i + 1}`);
+                        return data.rates[to.toUpperCase()];
+                    }
+                }
+                
+                throw new Error('Rate not found in response');
+                
+            } catch (error) {
+                console.warn(`Content: API ${i + 1} failed:`, error.message);
+                continue;
+            }
+        }
+
+        console.error('Content: All exchange rate APIs failed');
+        return null;
     }
 
     showNotification(message, type = 'info') {

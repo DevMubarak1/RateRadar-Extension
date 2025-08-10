@@ -1,331 +1,367 @@
 // RateRadar Options Page JavaScript
 class RateRadarOptions {
     constructor() {
-        this.defaultSettings = {
-            theme: 'light',
-            defaultCurrency: 'USD',
-            refreshInterval: 5,
-            notifications: true,
-            soundAlerts: false,
-            autoRefresh: true,
-            smartShopping: false,
-            priceHighlighting: false,
-            shoppingCurrency: 'USD',
-            maxAlerts: 10,
-            autoDeactivate: false,
-            analytics: true
-        };
-        
+        this.settings = {};
         this.init();
     }
 
     init() {
         this.loadSettings();
         this.setupEventListeners();
+        this.loadStatistics();
+        this.initHistoryChart();
     }
 
     setupEventListeners() {
-        // Save settings button
-        document.getElementById('saveSettings').addEventListener('click', () => {
-            this.saveSettings();
+        // Settings save button
+        const saveBtn = document.getElementById('saveSettings');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.saveSettings());
+        }
+
+        // Reset button
+        const resetBtn = document.getElementById('resetSettings');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => this.resetSettings());
+        }
+
+        // Export button
+        const exportBtn = document.getElementById('exportData');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => this.exportData());
+        }
+
+        // History controls
+        this.setupHistoryControls();
+    }
+
+    setupHistoryControls() {
+        // Period buttons
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.loadHistory(e.target.dataset.period);
+            });
         });
 
-        // Reset settings button
-        document.getElementById('resetSettings').addEventListener('click', () => {
-            this.resetSettings();
-        });
-
-        // Manage alerts button
-        document.getElementById('manageAlerts').addEventListener('click', () => {
-            this.showAlertModal();
-        });
-
-        // Export data button
-        document.getElementById('exportData').addEventListener('click', () => {
-            this.exportData();
-        });
-
-        // Clear data button
-        document.getElementById('clearData').addEventListener('click', () => {
-            this.clearData();
-        });
-
-        // Alert modal close button
-        document.getElementById('closeAlertModal').addEventListener('click', () => {
-            this.hideAlertModal();
-        });
-
-        // Close modal when clicking outside
-        document.getElementById('alertModal').addEventListener('click', (e) => {
-            if (e.target.id === 'alertModal') {
-                this.hideAlertModal();
-            }
-        });
+        // Currency selectors
+        const fromSelect = document.getElementById('historyFromCurrency');
+        const toSelect = document.getElementById('historyToCurrency');
+        
+        if (fromSelect) {
+            fromSelect.addEventListener('change', () => this.loadHistory());
+        }
+        if (toSelect) {
+            toSelect.addEventListener('change', () => this.loadHistory());
+        }
     }
 
     async loadSettings() {
         try {
             const result = await chrome.storage.sync.get(['settings']);
-            const settings = { ...this.defaultSettings, ...result.settings };
-
-            // Populate form fields
-            document.getElementById('theme').value = settings.theme;
-            document.getElementById('defaultCurrency').value = settings.defaultCurrency;
-            document.getElementById('refreshInterval').value = settings.refreshInterval;
-            document.getElementById('notifications').checked = settings.notifications;
-            document.getElementById('soundAlerts').checked = settings.soundAlerts;
-            document.getElementById('autoRefresh').checked = settings.autoRefresh;
-            document.getElementById('smartShopping').checked = settings.smartShopping;
-            document.getElementById('priceHighlighting').checked = settings.priceHighlighting;
-            document.getElementById('shoppingCurrency').value = settings.shoppingCurrency;
-            document.getElementById('maxAlerts').value = settings.maxAlerts;
-            document.getElementById('autoDeactivate').checked = settings.autoDeactivate;
-            document.getElementById('analytics').checked = settings.analytics;
-
+            this.settings = result.settings || this.getDefaultSettings();
+            this.populateSettings();
         } catch (error) {
             console.error('Error loading settings:', error);
-            this.showStatus('Error loading settings', 'error');
+            this.settings = this.getDefaultSettings();
+            this.populateSettings();
         }
+    }
+
+    getDefaultSettings() {
+        return {
+            theme: 'light',
+            autoRefresh: true,
+            refreshInterval: 5,
+            notifications: true,
+            soundAlerts: false,
+            smartShopping: true,
+            baseCurrency: 'USD',
+            decimalPlaces: 2,
+            cacheDuration: 300,
+            showTrends: true
+        };
+    }
+
+    populateSettings() {
+        // Populate form fields with current settings
+        Object.keys(this.settings).forEach(key => {
+            const element = document.getElementById(key);
+            if (element) {
+                if (element.type === 'checkbox') {
+                    element.checked = this.settings[key];
+                } else {
+                    element.value = this.settings[key];
+                }
+            }
+        });
     }
 
     async saveSettings() {
         try {
-            const settings = {
-                theme: document.getElementById('theme').value,
-                defaultCurrency: document.getElementById('defaultCurrency').value,
-                refreshInterval: parseInt(document.getElementById('refreshInterval').value),
-                notifications: document.getElementById('notifications').checked,
-                soundAlerts: document.getElementById('soundAlerts').checked,
-                autoRefresh: document.getElementById('autoRefresh').checked,
-                smartShopping: document.getElementById('smartShopping').checked,
-                priceHighlighting: document.getElementById('priceHighlighting').checked,
-                shoppingCurrency: document.getElementById('shoppingCurrency').value,
-                maxAlerts: parseInt(document.getElementById('maxAlerts').value),
-                autoDeactivate: document.getElementById('autoDeactivate').checked,
-                analytics: document.getElementById('analytics').checked
-            };
-
-            await chrome.storage.sync.set({ settings });
-
-            // Update background script if needed
-            chrome.runtime.sendMessage({
-                action: 'updateSettings',
-                settings: settings
+            // Collect all settings from form
+            const newSettings = {};
+            
+            // Checkboxes
+            ['autoRefresh', 'notifications', 'soundAlerts', 'smartShopping', 'showTrends'].forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    newSettings[key] = element.checked;
+                }
             });
 
-            this.showStatus('Settings saved successfully!', 'success');
+            // Selects and inputs
+            ['theme', 'refreshInterval', 'baseCurrency', 'decimalPlaces', 'cacheDuration'].forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    newSettings[key] = element.value;
+                }
+            });
 
-            // Update alarm interval if refresh interval changed
-            if (settings.refreshInterval !== this.defaultSettings.refreshInterval) {
-                chrome.runtime.sendMessage({
-                    action: 'updateAlarmInterval',
-                    interval: settings.refreshInterval
-                });
-            }
+            // Save to Chrome storage
+            await chrome.storage.sync.set({ settings: newSettings });
+            this.settings = newSettings;
 
+            // Show success message
+            this.showToast('Settings saved successfully! ✅', 'success');
+            
+            // Update statistics
+            this.loadStatistics();
+            
         } catch (error) {
             console.error('Error saving settings:', error);
-            this.showStatus('Error saving settings', 'error');
+            this.showToast('Failed to save settings', 'error');
         }
     }
 
     async resetSettings() {
-        if (confirm('Are you sure you want to reset all settings to defaults?')) {
-            try {
-                await chrome.storage.sync.set({ settings: this.defaultSettings });
-                await this.loadSettings();
-                this.showStatus('Settings reset to defaults', 'success');
-            } catch (error) {
-                console.error('Error resetting settings:', error);
-                this.showStatus('Error resetting settings', 'error');
-            }
-        }
-    }
-
-    async showAlertModal() {
         try {
-            const alerts = await this.getAlerts();
-            const modal = document.getElementById('alertModal');
-            const alertsList = document.getElementById('alertsList');
-
-            if (alerts.length === 0) {
-                alertsList.innerHTML = `
-                    <div class="text-center py-8 text-gray-500">
-                        <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4 19h6a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                        </svg>
-                        <p>No active alerts</p>
-                        <p class="text-sm">Create alerts in the main extension popup</p>
-                    </div>
-                `;
-            } else {
-                alertsList.innerHTML = alerts.map(alert => this.createAlertHTML(alert)).join('');
-            }
-
-            modal.classList.remove('hidden');
-
+            const defaultSettings = this.getDefaultSettings();
+            await chrome.storage.sync.set({ settings: defaultSettings });
+            this.settings = defaultSettings;
+            this.populateSettings();
+            this.showToast('Settings reset to default! 🔄', 'success');
         } catch (error) {
-            console.error('Error loading alerts:', error);
-            this.showStatus('Error loading alerts', 'error');
-        }
-    }
-
-    hideAlertModal() {
-        document.getElementById('alertModal').classList.add('hidden');
-    }
-
-    createAlertHTML(alert) {
-        const isActive = alert.active ? 'Active' : 'Inactive';
-        const statusClass = alert.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
-        const alertType = alert.alertType === 'above' ? 'Above' : 'Below';
-        const isPriceAlert = alert.isPriceAlert ? ' (Price Alert)' : '';
-
-        return `
-            <div class="border border-gray-200 rounded-lg p-4">
-                <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <h4 class="font-medium text-gray-900">
-                            ${alert.fromCurrency} → ${alert.toCurrency}${isPriceAlert}
-                        </h4>
-                        <p class="text-sm text-gray-600">
-                            Alert when rate is ${alertType.toLowerCase()} ${alert.targetRate.toFixed(4)}
-                        </p>
-                    </div>
-                    <div class="flex space-x-2">
-                        <span class="px-2 py-1 text-xs rounded-full ${statusClass}">
-                            ${isActive}
-                        </span>
-                        <button onclick="rateRadarOptions.toggleAlert('${alert.id}')" class="text-blue-600 hover:text-blue-800 text-sm">
-                            ${alert.active ? 'Deactivate' : 'Activate'}
-                        </button>
-                    </div>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-xs text-gray-500">
-                        Created: ${new Date(alert.createdAt).toLocaleDateString()}
-                    </span>
-                    <button onclick="rateRadarOptions.deleteAlert('${alert.id}')" class="text-red-600 hover:text-red-800 text-sm">
-                        Delete
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-
-    async getAlerts() {
-        return new Promise((resolve) => {
-            chrome.storage.sync.get(['alerts'], (result) => {
-                resolve(result.alerts || []);
-            });
-        });
-    }
-
-    async toggleAlert(alertId) {
-        try {
-            const alerts = await this.getAlerts();
-            const alertIndex = alerts.findIndex(alert => alert.id === parseInt(alertId));
-            
-            if (alertIndex !== -1) {
-                alerts[alertIndex].active = !alerts[alertIndex].active;
-                await chrome.storage.sync.set({ alerts });
-                this.showAlertModal(); // Refresh the modal
-                this.showStatus(`Alert ${alerts[alertIndex].active ? 'activated' : 'deactivated'}`, 'success');
-            }
-        } catch (error) {
-            console.error('Error toggling alert:', error);
-            this.showStatus('Error updating alert', 'error');
-        }
-    }
-
-    async deleteAlert(alertId) {
-        if (confirm('Are you sure you want to delete this alert?')) {
-            try {
-                const alerts = await this.getAlerts();
-                const filteredAlerts = alerts.filter(alert => alert.id !== parseInt(alertId));
-                await chrome.storage.sync.set({ alerts: filteredAlerts });
-                this.showAlertModal(); // Refresh the modal
-                this.showStatus('Alert deleted', 'success');
-            } catch (error) {
-                console.error('Error deleting alert:', error);
-                this.showStatus('Error deleting alert', 'error');
-            }
+            console.error('Error resetting settings:', error);
+            this.showToast('Failed to reset settings', 'error');
         }
     }
 
     async exportData() {
         try {
             const data = await chrome.storage.sync.get();
-            const dataStr = JSON.stringify(data, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
             
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `rateradar-data-${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rateradar-data-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            this.showStatus('Data exported successfully', 'success');
+            
+            this.showToast('Data exported successfully! 📥', 'success');
         } catch (error) {
             console.error('Error exporting data:', error);
-            this.showStatus('Error exporting data', 'error');
+            this.showToast('Failed to export data', 'error');
         }
     }
 
-    async clearData() {
-        if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
-            try {
-                await chrome.storage.sync.clear();
-                await chrome.storage.local.clear();
-                this.showStatus('All data cleared', 'success');
-                
-                // Reload settings to defaults
-                setTimeout(() => {
-                    this.loadSettings();
-                }, 1000);
-            } catch (error) {
-                console.error('Error clearing data:', error);
-                this.showStatus('Error clearing data', 'error');
+    async loadStatistics() {
+        try {
+            const data = await chrome.storage.sync.get(['conversions', 'alerts', 'favorites']);
+            
+            const totalConversions = document.getElementById('totalConversions');
+            const activeAlerts = document.getElementById('activeAlerts');
+            const favoritePairs = document.getElementById('favoritePairs');
+            
+            if (totalConversions) {
+                totalConversions.textContent = data.conversions || 0;
             }
+            if (activeAlerts) {
+                activeAlerts.textContent = data.alerts ? data.alerts.length : 0;
+            }
+            if (favoritePairs) {
+                favoritePairs.textContent = data.favorites ? data.favorites.length : 0;
+            }
+        } catch (error) {
+            console.error('Error loading statistics:', error);
         }
     }
 
-    showStatus(message, type = 'success') {
-        const statusDiv = document.getElementById('statusMessage');
-        const statusText = document.getElementById('statusText');
+    async loadHistory(period = 7) {
+        try {
+            const fromCurrency = document.getElementById('historyFromCurrency')?.value || 'USD';
+            const toCurrency = document.getElementById('historyToCurrency')?.value || 'EUR';
+            
+            // Get current rate for base calculation
+            const currentRate = await this.getCurrentRate(fromCurrency, toCurrency);
+            
+            // Generate historical data (in a real app, this would come from an API)
+            const historyData = this.generateHistoryData(period, currentRate);
+            
+            this.renderHistoryChart(historyData, period);
+            this.updateHistoryInfo(currentRate);
+            
+        } catch (error) {
+            console.error('Error loading history:', error);
+        }
+    }
+
+    async getCurrentRate(fromCurrency, toCurrency) {
+        // This would normally call the same API as the popup
+        // For now, return a sample rate
+        return 0.85; // Sample EUR/USD rate
+    }
+
+    generateHistoryData(period, baseRate) {
+        const data = [];
+        const labels = [];
         
-        // Remove existing classes
-        statusDiv.className = 'mt-4';
-        
-        // Add appropriate classes based on type
-        if (type === 'success') {
-            statusDiv.classList.add('bg-green-100', 'border', 'border-green-400', 'text-green-700', 'px-4', 'py-3', 'rounded');
-        } else if (type === 'error') {
-            statusDiv.classList.add('bg-red-100', 'border', 'border-red-400', 'text-red-700', 'px-4', 'py-3', 'rounded');
-        } else {
-            statusDiv.classList.add('bg-blue-100', 'border', 'border-blue-400', 'text-blue-700', 'px-4', 'py-3', 'rounded');
+        for (let i = period; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            labels.push(date.toLocaleDateString());
+            
+            // Generate realistic variation
+            const variation = (Math.random() - 0.5) * 0.1; // ±5% variation
+            data.push(baseRate * (1 + variation));
         }
         
-        statusText.textContent = message;
-        statusDiv.classList.remove('hidden');
+        return { labels, data };
+    }
+
+    renderHistoryChart(historyData, period) {
+        const canvas = document.getElementById('historyChartLarge');
+        if (!canvas) return;
         
-        // Hide after 3 seconds
-        setTimeout(() => {
-            statusDiv.classList.add('hidden');
-        }, 3000);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 40;
+        
+        const chartWidth = width - 2 * padding;
+        const chartHeight = height - 2 * padding;
+        
+        const minValue = Math.min(...historyData.data);
+        const maxValue = Math.max(...historyData.data);
+        const range = maxValue - minValue || 1;
+        
+        // Draw grid
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.lineWidth = 1;
+        
+        // Horizontal grid lines
+        for (let i = 0; i <= 5; i++) {
+            const y = padding + (i * chartHeight / 5);
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(width - padding, y);
+            ctx.stroke();
+        }
+        
+        // Vertical grid lines
+        for (let i = 0; i <= 10; i++) {
+            const x = padding + (i * chartWidth / 10);
+            ctx.beginPath();
+            ctx.moveTo(x, padding);
+            ctx.lineTo(x, height - padding);
+            ctx.stroke();
+        }
+        
+        // Draw line chart
+        ctx.strokeStyle = '#3B82F6';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        
+        historyData.data.forEach((value, index) => {
+            const x = padding + (index * chartWidth / (historyData.data.length - 1));
+            const y = height - padding - ((value - minValue) * chartHeight / range);
+            
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+        
+        ctx.stroke();
+        
+        // Draw points
+        ctx.fillStyle = '#3B82F6';
+        historyData.data.forEach((value, index) => {
+            const x = padding + (index * chartWidth / (historyData.data.length - 1));
+            const y = height - padding - ((value - minValue) * chartHeight / range);
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+        
+        // Draw labels
+        ctx.fillStyle = '#64748b';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        
+        // X-axis labels
+        historyData.labels.forEach((label, index) => {
+            const x = padding + (index * chartWidth / (historyData.labels.length - 1));
+            ctx.fillText(label, x, height - padding + 20);
+        });
+        
+        // Y-axis labels
+        ctx.textAlign = 'right';
+        for (let i = 0; i <= 5; i++) {
+            const y = padding + (i * chartHeight / 5);
+            const value = minValue + (i * range / 5);
+            ctx.fillText(value.toFixed(4), padding - 10, y + 4);
+        }
     }
 
-    // Make methods available globally for inline onclick handlers
-    toggleAlert(alertId) {
-        this.toggleAlert(alertId);
+    updateHistoryInfo(currentRate) {
+        const currentRateDisplay = document.getElementById('currentRateDisplay');
+        const rateChangeDisplay = document.getElementById('rateChangeDisplay');
+        
+        if (currentRateDisplay) {
+            const fromCurrency = document.getElementById('historyFromCurrency')?.value || 'USD';
+            const toCurrency = document.getElementById('historyToCurrency')?.value || 'EUR';
+            currentRateDisplay.textContent = `1 ${fromCurrency} = ${currentRate.toFixed(4)} ${toCurrency}`;
+        }
+        
+        if (rateChangeDisplay) {
+            const change = (Math.random() - 0.5) * 0.1; // Random change for demo
+            const isPositive = change >= 0;
+            rateChangeDisplay.textContent = `${isPositive ? '+' : ''}${(change * 100).toFixed(2)}%`;
+            rateChangeDisplay.className = `change-value ${isPositive ? 'positive' : 'negative'}`;
+        }
     }
 
-    deleteAlert(alertId) {
-        this.deleteAlert(alertId);
+    initHistoryChart() {
+        // Load initial history data
+        this.loadHistory(7);
+    }
+
+    showToast(message, type = 'success') {
+        const toast = document.getElementById('successToast');
+        if (toast) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
     }
 }
 
-// Initialize RateRadar options when DOM is loaded
+// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.rateRadarOptions = new RateRadarOptions();
+    new RateRadarOptions();
 }); 

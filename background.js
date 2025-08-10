@@ -92,14 +92,82 @@ class RateRadarBackground {
     }
 
     async getCurrentRate(fromCurrency, toCurrency) {
-        const response = await fetch(`https://api.exchangerate.host/convert?from=${fromCurrency}&to=${toCurrency}&amount=1`);
-        const data = await response.json();
-        
-        if (!data.success) {
-            throw new Error('Failed to fetch current rate');
+        const exchangeAPIs = [
+            'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies',
+            'https://latest.currency-api.pages.dev/v1/currencies',
+            'https://api.exchangerate-api.com/v4/latest'
+        ];
+
+        // Try each API endpoint
+        for (let i = 0; i < exchangeAPIs.length; i++) {
+            try {
+                const rate = await this.fetchFromExchangeAPI(exchangeAPIs[i], fromCurrency.toLowerCase(), toCurrency.toLowerCase());
+                if (rate !== null) {
+                    console.log(`Background: Successfully got rate from API ${i + 1}:`, rate);
+                    return rate;
+                }
+            } catch (error) {
+                console.warn(`Background: API ${i + 1} failed:`, error.message);
+                continue;
+            }
         }
-        
-        return data.result;
+
+        throw new Error('All exchange rate APIs failed');
+    }
+
+    async fetchFromExchangeAPI(apiUrl, fromCurrency, toCurrency) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+        try {
+            let response;
+            
+            if (apiUrl.includes('fawazahmed0') || apiUrl.includes('currency-api')) {
+                // Use the new fawazahmed0 API format
+                const url = `${apiUrl}/${fromCurrency}.json`;
+                response = await fetch(url, { 
+                    signal: controller.signal,
+                    headers: {
+                        'Accept': 'application/json',
+                        'User-Agent': 'RateRadar/1.0'
+                    }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                if (data[fromCurrency] && data[fromCurrency][toCurrency]) {
+                    return data[fromCurrency][toCurrency];
+                }
+            } else if (apiUrl.includes('exchangerate-api')) {
+                // Use ExchangeRate-API format
+                const url = `${apiUrl}/${fromCurrency.toUpperCase()}`;
+                response = await fetch(url, { 
+                    signal: controller.signal,
+                    headers: {
+                        'Accept': 'application/json',
+                        'User-Agent': 'RateRadar/1.0'
+                    }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                if (data.rates && data.rates[toCurrency.toUpperCase()]) {
+                    return data.rates[toCurrency.toUpperCase()];
+                }
+            }
+            
+            throw new Error('Invalid response format');
+            
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                throw new Error('Request timeout');
+            }
+            throw error;
+        } finally {
+            clearTimeout(timeoutId);
+        }
     }
 
     async showNotification(alert, message, currentRate) {
