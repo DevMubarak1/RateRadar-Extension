@@ -20,13 +20,13 @@ class RateRadarContent {
         await this.loadSettings();
         this.setupEventListeners();
         
-        // Always try to detect prices on e-commerce sites
-        if (this.isEcommerceSite()) {
+        // Always try to detect prices on any website if smart shopping is enabled
+        if (this.isEnabled) {
+            console.log('Smart shopping enabled by settings, detecting prices...');
+            this.detectPrices();
+        } else if (this.isEcommerceSite()) {
             console.log('E-commerce site detected, enabling smart shopping...');
             this.isEnabled = true;
-            this.detectPrices();
-        } else if (this.isEnabled) {
-            console.log('Smart shopping enabled by settings, detecting prices...');
             this.detectPrices();
         }
         
@@ -232,6 +232,66 @@ class RateRadarContent {
         }
 
         console.log('RateRadar: Detecting prices on page...');
+        
+        // Use general price detection for all sites
+        this.detectGeneralPrices();
+    }
+
+    detectAmazonPrices() {
+        console.log('RateRadar: Using Amazon-specific price detection...');
+        
+        // Look for Amazon price containers
+        const priceContainers = document.querySelectorAll('.a-price, [data-a-color="price"]');
+        console.log('RateRadar: Found Amazon price containers:', priceContainers.length);
+        
+        priceContainers.forEach((container, index) => {
+            try {
+                // Get the whole price part
+                const wholeElement = container.querySelector('.a-price-whole');
+                const fractionElement = container.querySelector('.a-price-fraction');
+                const symbolElement = container.querySelector('.a-price-symbol');
+                
+                let priceText = '';
+                let currency = 'USD'; // Default for Amazon
+                
+                if (symbolElement) {
+                    currency = this.normalizeCurrency(symbolElement.textContent.trim());
+                }
+                
+                if (wholeElement) {
+                    priceText += wholeElement.textContent.trim();
+                }
+                
+                if (fractionElement) {
+                    priceText += '.' + fractionElement.textContent.trim();
+                }
+                
+                if (priceText) {
+                    const amount = parseFloat(priceText.replace(/,/g, ''));
+                    if (!isNaN(amount) && amount > 0) {
+                        console.log(`RateRadar: Amazon price ${index + 1}:`, currency, amount);
+                        
+                        const priceData = {
+                            currency: currency,
+                            amount: amount,
+                            originalText: priceText,
+                            element: container,
+                            timestamp: Date.now()
+                        };
+                        
+                        this.detectedPrices.push(priceData);
+                        this.highlightPrice(container, priceData);
+                    }
+                }
+            } catch (error) {
+                console.log('RateRadar: Error processing Amazon price container:', error);
+            }
+        });
+        
+        console.log(`RateRadar: Successfully processed ${this.detectedPrices.length} Amazon prices`);
+    }
+
+    detectGeneralPrices() {
         const priceElements = this.findPriceElements();
         this.detectedPrices = [];
 
@@ -247,7 +307,7 @@ class RateRadarContent {
         });
 
         console.log(`RateRadar: Successfully processed ${this.detectedPrices.length} prices`);
-
+        
         // Send detected prices to background script
         if (this.detectedPrices.length > 0) {
             chrome.runtime.sendMessage({
@@ -261,7 +321,7 @@ class RateRadarContent {
     }
 
     findPriceElements() {
-        // Enhanced selectors for better price detection
+        // Enhanced selectors for better price detection on all websites
         const selectors = [
             // Common price selectors
             '[data-price]',
@@ -309,25 +369,28 @@ class RateRadarContent {
             '.product__price',
             '.product-price__value',
             
-            // Amazon specific
+            // Amazon specific selectors
             '.a-price-whole',
-            '.a-price-fraction',
+            '.a-price-fraction', 
             '.a-price-symbol',
             '.a-price',
             '.a-offscreen',
+            '[data-a-color="price"]',
+            '.a-price-range',
+            '.a-price-current',
             
-            // eBay specific
+            // eBay specific selectors
             '.x-price-primary',
             '.x-price-original',
             '.x-price-current',
             
-            // General e-commerce
-            '[class*="price"]',
-            '[class*="Price"]',
-            'span:contains("$")',
-            'span:contains("€")',
-            'span:contains("£")',
-            'span:contains("₦")'
+            // General text elements that might contain prices
+            'span',
+            'div',
+            'p',
+            'strong',
+            'b',
+            'em'
         ];
 
         const elements = [];
@@ -340,12 +403,13 @@ class RateRadarContent {
             }
         });
 
-        // Remove duplicates and filter out elements that are too small
+        // Remove duplicates and filter out elements that are too small or too large
         const uniqueElements = [...new Set(elements)].filter(element => {
             const text = element.textContent.trim();
-            return text.length > 0 && text.length < 100; // Filter out very long text
+            return text.length > 0 && text.length < 200 && text.length > 1; // Filter out very long and very short text
         });
         
+        console.log('RateRadar: Found elements with selectors:', uniqueElements.length);
         return uniqueElements;
     }
 
@@ -353,18 +417,22 @@ class RateRadarContent {
         const text = element.textContent.trim();
         
         // Skip if text is too long or empty
-        if (!text || text.length > 100) {
+        if (!text || text.length > 200) {
             return null;
         }
         
         console.log('RateRadar: Analyzing element text:', text);
         
-        // Enhanced price regex patterns
+        // Enhanced price regex patterns for all websites
         const pricePatterns = [
             /([$€£¥₦₿₹₽₩₪₨₴₸₺₼₾₿])\s*([\d,]+(?:\.\d{2})?)/g,  // Standard currency symbols
             /([\d,]+(?:\.\d{2})?)\s*([$€£¥₦₿₹₽₩₪₨₴₸₺₼₾₿])/g,  // Amount before currency
             /([$€£¥₦₿₹₽₩₪₨₴₸₺₼₾₿])([\d,]+(?:\.\d{2})?)/g,   // No space
-            /([\d,]+(?:\.\d{2})?)([$€£¥₦₿₹₽₩₪₨₴₸₺₼₾₿])/g      // No space, amount first
+            /([\d,]+(?:\.\d{2})?)([$€£¥₦₿₹₽₩₪₨₴₸₺₼₾₿])/g,      // No space, amount first
+            /([$€£¥₦₿₹₽₩₪₨₴₸₺₼₾₿])\s*([\d,]+)/g,           // Currency symbol with whole numbers
+            /([\d,]+)\s*([$€£¥₦₿₹₽₩₪₨₴₸₺₼₾₿])/g,              // Whole numbers with currency symbol
+            /([$€£¥₦₿₹₽₩₪₨₴₸₺₼₾₿])([\d,]+)/g,               // Currency symbol with whole numbers, no space
+            /([\d,]+)([$€£¥₦₿₹₽₩₪₨₴₸₺₼₾₿])/g                  // Whole numbers with currency symbol, no space
         ];
 
         for (const pattern of pricePatterns) {
@@ -394,22 +462,42 @@ class RateRadarContent {
             }
         }
 
-        // Try to find prices without currency symbols (common on some sites)
-        const numberPattern = /(\d+(?:,\d{3})*(?:\.\d{2})?)/g;
-        const numbers = [...text.matchAll(numberPattern)];
+        // Try to find prices without currency symbols (common on many sites)
+        const numberPatterns = [
+            /(\d+(?:,\d{3})*(?:\.\d{2})?)/g,  // Standard decimal format
+            /(\d+(?:,\d{3})*)/g,              // Whole numbers with commas
+            /(\d+\.\d{2})/g,                  // Decimal format without commas
+            /(\d+)/g                          // Any number
+        ];
         
-        if (numbers.length > 0) {
-            const number = parseFloat(numbers[0][1].replace(/,/g, ''));
-            if (!isNaN(number) && number > 0 && number < 1000000) {
-                // Assume USD if no currency symbol found
-                console.log('RateRadar: Found number (assuming USD):', number, 'in text:', text);
-                return {
-                    currency: 'USD',
-                    amount: number,
-                    originalText: text,
-                    element: element,
-                    timestamp: Date.now()
-                };
+        for (const pattern of numberPatterns) {
+            const numbers = [...text.matchAll(pattern)];
+            if (numbers.length > 0) {
+                const number = parseFloat(numbers[0][1].replace(/,/g, ''));
+                if (!isNaN(number) && number > 0 && number < 1000000) {
+                    // Try to determine currency from context
+                    let currency = 'USD'; // Default
+                    
+                    // Check if there are any currency hints in the text
+                    if (text.includes('€') || text.toLowerCase().includes('euro')) {
+                        currency = 'EUR';
+                    } else if (text.includes('£') || text.toLowerCase().includes('pound')) {
+                        currency = 'GBP';
+                    } else if (text.includes('¥') || text.toLowerCase().includes('yen')) {
+                        currency = 'JPY';
+                    } else if (text.includes('₦') || text.toLowerCase().includes('naira')) {
+                        currency = 'NGN';
+                    }
+                    
+                    console.log('RateRadar: Found number (assuming', currency, '):', number, 'in text:', text);
+                    return {
+                        currency: currency,
+                        amount: number,
+                        originalText: text,
+                        element: element,
+                        timestamp: Date.now()
+                    };
+                }
             }
         }
 
@@ -448,21 +536,22 @@ class RateRadarContent {
         overlay.className = 'rateradar-price-overlay';
         overlay.style.cssText = `
             position: absolute;
-            top: -30px;
-            right: -5px;
+            top: -35px;
+            right: -10px;
             background: linear-gradient(135deg, #3B82F6, #1D4ED8);
             color: white;
-            padding: 6px 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            z-index: 10000;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            z-index: 100000;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
             cursor: pointer;
             transition: all 0.3s ease;
             white-space: nowrap;
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(10px);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         `;
         
         // Convert price to user's currency
@@ -475,14 +564,14 @@ class RateRadarContent {
             
             // Add hover effect
             overlay.addEventListener('mouseenter', () => {
-                overlay.style.transform = 'scale(1.1)';
-                overlay.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.6)';
+                overlay.style.transform = 'scale(1.15)';
+                overlay.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.7)';
                 overlay.style.background = 'linear-gradient(135deg, #2563EB, #1E40AF)';
             });
             
             overlay.addEventListener('mouseleave', () => {
                 overlay.style.transform = 'scale(1)';
-                overlay.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
+                overlay.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.5)';
                 overlay.style.background = 'linear-gradient(135deg, #3B82F6, #1D4ED8)';
             });
             
@@ -493,18 +582,44 @@ class RateRadarContent {
                 this.showDetailedConversion(priceData, convertedPrice);
             });
             
-            // Position the overlay
-            if (element.style.position !== 'absolute' && element.style.position !== 'relative') {
-                element.style.position = 'relative';
+            // Find the best element to attach the overlay to
+            let targetElement = element;
+            
+            // Try to find a parent container that's better positioned
+            const parentSelectors = [
+                '.a-price', '.a-price-range', '[data-a-color="price"]', // Amazon
+                '.price', '.product-price', '.item-price', // General
+                '.x-price-primary', '.x-price-current', // eBay
+                'span', 'div', 'p' // Fallback
+            ];
+            
+            for (const selector of parentSelectors) {
+                const parent = element.closest(selector);
+                if (parent && parent !== element) {
+                    targetElement = parent;
+                    break;
+                }
             }
-            element.appendChild(overlay);
             
-            // Store reference for cleanup
-            element.rateradarOverlay = overlay;
+            // Ensure the target element has relative positioning
+            if (targetElement.style.position !== 'absolute' && targetElement.style.position !== 'relative') {
+                targetElement.style.position = 'relative';
+            }
             
-            console.log(`RateRadar: Added overlay: ${priceData.currency} ${priceData.amount} → ${this.userCurrency} ${convertedPrice.toFixed(2)}`);
+            // Check if the element is visible and has dimensions
+            const rect = targetElement.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                targetElement.appendChild(overlay);
+                
+                // Store reference for cleanup
+                element.rateradarOverlay = overlay;
+                
+                console.log(`RateRadar: Added overlay: ${priceData.currency} ${priceData.amount} → ${this.userCurrency} ${convertedPrice.toFixed(2)}`);
+            } else {
+                console.log('RateRadar: Element not visible, skipping overlay');
+            }
         } else {
-            console.log('RateRadar: No conversion needed or conversion failed');
+            console.log('RateRadar: No conversion needed or conversion failed for:', priceData.currency, priceData.amount);
         }
     }
 

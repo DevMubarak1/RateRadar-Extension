@@ -312,22 +312,24 @@ body {
     width: 100%;
 }
 
-/* Currency Select Dropdown */
+/* Currency Select Wrapper */
 .currency-select-wrapper {
     position: relative;
     display: inline-block;
     flex-shrink: 0;
+    width: 70px; /* Fixed width to contain the dropdown */
+    overflow: hidden; /* Prevent overflow */
 }
 
 /* Currency Select Dropdown */
 .currency-select {
-    width: 70px;
+    width: 100%; /* Use full width of wrapper */
     height: 44px;
     background: var(--input-bg);
     backdrop-filter: blur(12px);
     border: 1px solid var(--input-border);
     border-radius: 12px;
-    padding: 0 25px 0 8px; /* Make room for dropdown icon */
+    padding: 0 20px 0 8px; /* Reduced right padding to keep icon within bounds */
     font-size: 12px;
     font-weight: 600;
     color: var(--input-text);
@@ -338,6 +340,7 @@ body {
     -moz-appearance: none;
     position: relative;
     z-index: 1;
+    box-sizing: border-box; /* Ensure padding is included in width */
 }
 
 .currency-select:focus {
@@ -352,7 +355,7 @@ body {
 /* Dropdown Icon */
 .dropdown-icon {
     position: absolute;
-    right: 8px;
+    right: 6px; /* Reduced from 8px to keep within bounds */
     top: 50%;
     transform: translateY(-50%);
     font-size: 8px;
