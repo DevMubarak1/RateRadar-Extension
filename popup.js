@@ -30,14 +30,51 @@ class RateRadar {
     init() {
         console.log('RateRadar initializing with real-time APIs...');
         try {
-            this.setupEventListeners();
-            this.loadCurrencies();
-            this.switchTab('converter');
-            this.checkConnection();
-            console.log('RateRadar initialized successfully');
+            this.loadSettings().then(() => {
+                this.setupEventListeners();
+                this.loadCurrencies();
+                this.switchTab('converter');
+                this.checkConnection();
+                this.applyTheme();
+                console.log('RateRadar initialized successfully');
+            }).catch(error => {
+                console.error('Error during initialization:', error);
+            });
         } catch (error) {
             console.error('Error during initialization:', error);
         }
+    }
+
+    async loadSettings() {
+        try {
+            const result = await chrome.storage.sync.get(['settings']);
+            this.settings = result.settings || this.getDefaultSettings();
+            console.log('Settings loaded:', this.settings);
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            this.settings = this.getDefaultSettings();
+        }
+    }
+
+    getDefaultSettings() {
+        return {
+            theme: 'light',
+            autoRefresh: true,
+            refreshInterval: 5,
+            notifications: true,
+            soundAlerts: false,
+            smartShopping: true,
+            baseCurrency: 'USD',
+            decimalPlaces: 2,
+            cacheDuration: 300,
+            showTrends: true
+        };
+    }
+
+    applyTheme() {
+        const theme = this.settings.theme || 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        console.log('Theme applied:', theme);
     }
 
     setupEventListeners() {
@@ -60,6 +97,162 @@ class RateRadar {
         this.setupCryptoEvents();
         this.setupActionEvents();
         this.setupHistoryEvents();
+
+        // Listen for theme updates from settings
+        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+            if (request.action === 'updateTheme') {
+                this.settings.theme = request.theme;
+                this.applyTheme();
+                sendResponse({ success: true });
+            } else if (request.action === 'settingChanged') {
+                this.handleSettingChange(request.setting, request.value);
+                sendResponse({ success: true });
+            }
+        });
+
+        // Setup auto refresh if enabled
+        this.setupAutoRefresh();
+    }
+
+    handleSettingChange(setting, value) {
+        this.settings[setting] = value;
+        
+        switch (setting) {
+            case 'theme':
+                this.applyTheme();
+                break;
+                
+            case 'autoRefresh':
+                if (value) {
+                    this.setupAutoRefresh();
+                } else {
+                    this.clearAutoRefresh();
+                }
+                break;
+                
+            case 'refreshInterval':
+                if (this.settings.autoRefresh) {
+                    this.setupAutoRefresh();
+                }
+                break;
+                
+            case 'baseCurrency':
+                // Update display with new base currency
+                this.updateDisplayWithSettings();
+                break;
+                
+            case 'decimalPlaces':
+                // Update display precision
+                this.updateDisplayWithSettings();
+                break;
+                
+            case 'showTrends':
+                // Update trend indicators if present
+                this.updateTrendDisplay();
+                break;
+                
+            case 'notifications':
+                // Handle notification settings
+                this.updateNotificationSettings();
+                break;
+                
+            case 'soundAlerts':
+                // Handle sound alert settings
+                this.updateSoundSettings();
+                break;
+                
+            case 'smartShopping':
+                // Smart shopping is handled by content script
+                break;
+                
+            case 'cacheDuration':
+                // Update cache timeout
+                this.cacheTimeout = value * 1000;
+                break;
+                
+            default:
+                console.log('Unknown setting change:', setting, value);
+        }
+    }
+
+    setupAutoRefresh() {
+        this.clearAutoRefresh();
+        
+        if (this.settings.autoRefresh) {
+            const interval = this.settings.refreshInterval * 60 * 1000; // Convert minutes to milliseconds
+            this.autoRefreshInterval = setInterval(() => {
+                this.refreshRates();
+            }, interval);
+            
+            console.log(`Auto refresh set to ${this.settings.refreshInterval} minutes`);
+        }
+    }
+
+    clearAutoRefresh() {
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+            this.autoRefreshInterval = null;
+        }
+    }
+
+    async refreshRates() {
+        console.log('Auto refreshing rates...');
+        
+        if (this.currentTab === 'converter') {
+            await this.convertCurrency();
+        } else if (this.currentTab === 'crypto') {
+            await this.convertCrypto();
+        }
+    }
+
+    updateDisplayWithSettings() {
+        // Update decimal places in displays
+        const decimalPlaces = this.settings.decimalPlaces || 2;
+        
+        // Update exchange rate display
+        const exchangeRateElement = document.getElementById('exchangeRate');
+        if (exchangeRateElement && this.exchangeRate) {
+            const fromCurrency = document.getElementById('fromCurrency')?.value || 'USD';
+            const toCurrency = document.getElementById('toCurrency')?.value || 'EUR';
+            exchangeRateElement.textContent = `1 ${fromCurrency} = ${this.exchangeRate.toFixed(decimalPlaces)} ${toCurrency}`;
+        }
+        
+        // Update crypto price display
+        const cryptoPriceElement = document.getElementById('cryptoPrice');
+        if (cryptoPriceElement && this.cryptoPrice) {
+            cryptoPriceElement.textContent = `$${this.cryptoPrice.toFixed(decimalPlaces)}`;
+        }
+    }
+
+    updateTrendDisplay() {
+        // Disable trend indicators to prevent issues
+        this.removeTrendIndicators();
+    }
+
+    addTrendIndicators() {
+        // Disable trend indicators to prevent issues
+        return;
+    }
+
+    removeTrendIndicators() {
+        const trendIndicators = document.querySelectorAll('.trend-indicator');
+        trendIndicators.forEach(indicator => indicator.remove());
+    }
+
+    updateNotificationSettings() {
+        if (this.settings.notifications) {
+            console.log('Notifications enabled');
+        } else {
+            console.log('Notifications disabled');
+        }
+    }
+
+    updateSoundSettings() {
+        if (this.settings.soundAlerts) {
+            console.log('Sound alerts enabled');
+        } else {
+            console.log('Sound alerts disabled');
+        }
     }
 
     setupCurrencyEvents() {
@@ -332,13 +525,13 @@ class RateRadar {
                 }
             }
             
-            throw new Error('Invalid response format');
+            throw new Error('Rate not found in response');
             
         } catch (error) {
             if (error.name === 'AbortError') {
                 throw new Error('Request timeout');
             }
-            throw error;
+            throw new Error(`API returned unsuccessful response: ${error.message}`);
         } finally {
             clearTimeout(timeoutId);
         }

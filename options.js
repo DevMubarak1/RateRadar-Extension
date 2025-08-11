@@ -31,6 +31,68 @@ class RateRadarOptions {
             exportBtn.addEventListener('click', () => this.exportData());
         }
 
+        // Theme change handler - Fix the theme toggle
+        const themeSelect = document.getElementById('theme');
+        if (themeSelect) {
+            themeSelect.addEventListener('change', () => {
+                this.applyTheme();
+            });
+        }
+
+        // Auto refresh toggle
+        const autoRefreshToggle = document.getElementById('autoRefresh');
+        if (autoRefreshToggle) {
+            autoRefreshToggle.addEventListener('change', () => this.updateAutoRefresh());
+        }
+
+        // Refresh interval change
+        const refreshIntervalSelect = document.getElementById('refreshInterval');
+        if (refreshIntervalSelect) {
+            refreshIntervalSelect.addEventListener('change', () => this.updateRefreshInterval());
+        }
+
+        // Notifications toggle
+        const notificationsToggle = document.getElementById('notifications');
+        if (notificationsToggle) {
+            notificationsToggle.addEventListener('change', () => this.updateNotifications());
+        }
+
+        // Sound alerts toggle
+        const soundAlertsToggle = document.getElementById('soundAlerts');
+        if (soundAlertsToggle) {
+            soundAlertsToggle.addEventListener('change', () => this.updateSoundAlerts());
+        }
+
+        // Smart shopping toggle
+        const smartShoppingToggle = document.getElementById('smartShopping');
+        if (smartShoppingToggle) {
+            smartShoppingToggle.addEventListener('change', () => this.updateSmartShopping());
+        }
+
+        // Base currency change
+        const baseCurrencySelect = document.getElementById('baseCurrency');
+        if (baseCurrencySelect) {
+            baseCurrencySelect.addEventListener('change', () => this.updateBaseCurrency());
+        }
+
+        // Decimal places change
+        const decimalPlacesSelect = document.getElementById('decimalPlaces');
+        if (decimalPlacesSelect) {
+            decimalPlacesSelect.addEventListener('change', () => this.updateDecimalPlaces());
+        }
+
+        // Cache duration change
+        const cacheDurationSelect = document.getElementById('cacheDuration');
+        if (cacheDurationSelect) {
+            cacheDurationSelect.addEventListener('change', () => this.updateCacheDuration());
+        }
+
+        // Show trends toggle
+        const showTrendsToggle = document.getElementById('showTrends');
+        if (showTrendsToggle) {
+            showTrendsToggle.addEventListener('change', () => this.updateShowTrends());
+        }
+
         // History controls
         this.setupHistoryControls();
     }
@@ -62,11 +124,20 @@ class RateRadarOptions {
             const result = await chrome.storage.sync.get(['settings']);
             this.settings = result.settings || this.getDefaultSettings();
             this.populateSettings();
+            this.applyThemeToPage(); // Apply theme to settings page
+            console.log('Settings loaded:', this.settings);
         } catch (error) {
             console.error('Error loading settings:', error);
             this.settings = this.getDefaultSettings();
             this.populateSettings();
+            this.applyThemeToPage();
         }
+    }
+
+    applyThemeToPage() {
+        const theme = this.settings.theme || 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        console.log('Theme applied to settings page:', theme);
     }
 
     getDefaultSettings() {
@@ -89,10 +160,14 @@ class RateRadarOptions {
         Object.keys(this.settings).forEach(key => {
             const element = document.getElementById(key);
             if (element) {
-                if (element.type === 'checkbox') {
-                    element.checked = this.settings[key];
-                } else {
-                    element.value = this.settings[key];
+                try {
+                    if (element.type === 'checkbox') {
+                        element.checked = this.settings[key];
+                    } else {
+                        element.value = this.settings[key];
+                    }
+                } catch (error) {
+                    console.warn(`Error setting value for ${key}:`, error);
                 }
             }
         });
@@ -358,6 +433,181 @@ class RateRadarOptions {
                 toast.classList.remove('show');
             }, 3000);
         }
+    }
+
+    applyTheme() {
+        const themeSelect = document.getElementById('theme');
+        if (themeSelect) {
+            const theme = themeSelect.value;
+            document.documentElement.setAttribute('data-theme', theme);
+            
+            // Update settings immediately
+            this.settings.theme = theme;
+            this.applySettingChange('theme', theme);
+            
+            // Apply theme to all extension pages
+            chrome.tabs.query({}, (tabs) => {
+                tabs.forEach(tab => {
+                    if (tab.url && tab.url.startsWith('chrome-extension://')) {
+                        chrome.tabs.sendMessage(tab.id, {
+                            action: 'updateTheme',
+                            theme: theme
+                        }).catch(() => {
+                            // Ignore errors for tabs that don't have content scripts
+                        });
+                    }
+                });
+            });
+        }
+    }
+
+    updateAutoRefresh() {
+        const autoRefreshToggle = document.getElementById('autoRefresh');
+        if (autoRefreshToggle) {
+            this.settings.autoRefresh = autoRefreshToggle.checked;
+            this.applySettingChange('autoRefresh', autoRefreshToggle.checked);
+        }
+    }
+
+    updateRefreshInterval() {
+        const refreshIntervalSelect = document.getElementById('refreshInterval');
+        if (refreshIntervalSelect) {
+            this.settings.refreshInterval = parseInt(refreshIntervalSelect.value);
+            this.applySettingChange('refreshInterval', parseInt(refreshIntervalSelect.value));
+        }
+    }
+
+    updateNotifications() {
+        const notificationsToggle = document.getElementById('notifications');
+        if (notificationsToggle) {
+            this.settings.notifications = notificationsToggle.checked;
+            this.applySettingChange('notifications', notificationsToggle.checked);
+            
+            // Request notification permission if enabled
+            if (notificationsToggle.checked) {
+                this.requestNotificationPermission();
+            }
+        }
+    }
+
+    updateSoundAlerts() {
+        const soundAlertsToggle = document.getElementById('soundAlerts');
+        if (soundAlertsToggle) {
+            this.settings.soundAlerts = soundAlertsToggle.checked;
+            this.applySettingChange('soundAlerts', soundAlertsToggle.checked);
+        }
+    }
+
+    updateSmartShopping() {
+        const smartShoppingToggle = document.getElementById('smartShopping');
+        if (smartShoppingToggle) {
+            this.settings.smartShopping = smartShoppingToggle.checked;
+            this.applySettingChange('smartShopping', smartShoppingToggle.checked);
+            
+            // Notify content scripts about smart shopping change
+            this.notifyContentScripts('smartShopping', smartShoppingToggle.checked);
+        }
+    }
+
+    updateBaseCurrency() {
+        const baseCurrencySelect = document.getElementById('baseCurrency');
+        if (baseCurrencySelect) {
+            this.settings.baseCurrency = baseCurrencySelect.value;
+            this.applySettingChange('baseCurrency', baseCurrencySelect.value);
+            
+            // Notify content scripts about currency change
+            this.notifyContentScripts('baseCurrency', baseCurrencySelect.value);
+        }
+    }
+
+    updateDecimalPlaces() {
+        const decimalPlacesSelect = document.getElementById('decimalPlaces');
+        if (decimalPlacesSelect) {
+            this.settings.decimalPlaces = parseInt(decimalPlacesSelect.value);
+            this.applySettingChange('decimalPlaces', parseInt(decimalPlacesSelect.value));
+        }
+    }
+
+    updateCacheDuration() {
+        const cacheDurationSelect = document.getElementById('cacheDuration');
+        if (cacheDurationSelect) {
+            this.settings.cacheDuration = parseInt(cacheDurationSelect.value);
+            this.applySettingChange('cacheDuration', parseInt(cacheDurationSelect.value));
+        }
+    }
+
+    updateShowTrends() {
+        const showTrendsToggle = document.getElementById('showTrends');
+        if (showTrendsToggle) {
+            this.settings.showTrends = showTrendsToggle.checked;
+            this.applySettingChange('showTrends', showTrendsToggle.checked);
+        }
+    }
+
+    async applySettingChange(setting, value) {
+        try {
+            // Update settings in storage
+            await chrome.storage.sync.set({ settings: this.settings });
+            
+            // Show immediate feedback
+            this.showToast(`${this.getSettingName(setting)} updated!`, 'success');
+            
+            // Update statistics if needed
+            if (setting === 'baseCurrency' || setting === 'smartShopping') {
+                this.loadStatistics();
+            }
+            
+        } catch (error) {
+            console.error('Error applying setting change:', error);
+            this.showToast('Failed to update setting', 'error');
+        }
+    }
+
+    getSettingName(setting) {
+        const names = {
+            'theme': 'Theme',
+            'autoRefresh': 'Auto Refresh',
+            'refreshInterval': 'Refresh Interval',
+            'notifications': 'Notifications',
+            'soundAlerts': 'Sound Alerts',
+            'smartShopping': 'Smart Shopping',
+            'baseCurrency': 'Base Currency',
+            'decimalPlaces': 'Decimal Places',
+            'cacheDuration': 'Cache Duration',
+            'showTrends': 'Show Trends'
+        };
+        return names[setting] || setting;
+    }
+
+    async requestNotificationPermission() {
+        try {
+            if ('Notification' in window) {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    this.showToast('Notifications enabled! 🔔', 'success');
+                } else {
+                    this.showToast('Please enable notifications in browser settings', 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error requesting notification permission:', error);
+        }
+    }
+
+    notifyContentScripts(setting, value) {
+        chrome.tabs.query({}, (tabs) => {
+            tabs.forEach(tab => {
+                if (tab.url && !tab.url.startsWith('chrome://')) {
+                    chrome.tabs.sendMessage(tab.id, {
+                        action: 'settingChanged',
+                        setting: setting,
+                        value: value
+                    }).catch(() => {
+                        // Ignore errors for tabs without content scripts
+                    });
+                }
+            });
+        });
     }
 }
 

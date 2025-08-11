@@ -16,16 +16,23 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 40px 20px;
+            transition: all 0.3s ease;
+        }
+
+        /* Dark theme support */
+        [data-theme="dark"] body {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
         }
 
         .settings-container {
             max-width: 1000px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.98);
+            background: var(--card-bg, rgba(255, 255, 255, 0.98));
             backdrop-filter: blur(20px);
             border-radius: 24px;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 30px 60px var(--shadow-color, rgba(0, 0, 0, 0.15));
             overflow: hidden;
+            transition: all 0.3s ease;
         }
 
         .settings-header {
@@ -74,6 +81,8 @@
 
         .settings-content {
             padding: 40px;
+            background: var(--card-bg, rgba(255, 255, 255, 0.98));
+            transition: all 0.3s ease;
         }
 
         .settings-grid {
@@ -90,16 +99,17 @@
         }
 
         .settings-section {
-            background: rgba(248, 250, 252, 0.6);
+            background: var(--bg-secondary, rgba(248, 250, 252, 0.6));
             border-radius: 16px;
             padding: 28px;
-            border: 1px solid rgba(226, 232, 240, 0.8);
+            border: 1px solid var(--card-border, rgba(226, 232, 240, 0.8));
+            transition: all 0.3s ease;
         }
 
         .section-title {
             font-size: 20px;
             font-weight: 600;
-            color: #1e293b;
+            color: var(--text-primary, #1e293b);
             margin: 0 0 24px;
             display: flex;
             align-items: center;
@@ -122,7 +132,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 18px 0;
-            border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+            border-bottom: 1px solid var(--border-secondary, rgba(226, 232, 240, 0.6));
         }
 
         .setting-item:last-child {
@@ -137,13 +147,13 @@
         .setting-title {
             font-size: 16px;
             font-weight: 500;
-            color: #334155;
+            color: var(--text-primary, #334155);
             margin: 0 0 6px;
         }
 
         .setting-description {
             font-size: 14px;
-            color: #64748b;
+            color: var(--text-secondary, #64748b);
             margin: 0;
             line-height: 1.4;
         }
@@ -201,12 +211,12 @@
 
         .settings-select {
             appearance: none;
-            background: white;
-            border: 2px solid #e2e8f0;
+            background: var(--input-bg, white);
+            border: 2px solid var(--input-border, #e2e8f0);
             border-radius: 10px;
             padding: 10px 40px 10px 14px;
             font-size: 14px;
-            color: #334155;
+            color: var(--input-text, #334155);
             cursor: pointer;
             min-width: 140px;
             transition: all 0.2s;
@@ -214,12 +224,12 @@
 
         .settings-select:focus {
             outline: none;
-            border-color: #3B82F6;
+            border-color: var(--accent-color, #3B82F6);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .settings-select:hover {
-            border-color: #cbd5e1;
+            border-color: var(--border-secondary, #cbd5e1);
         }
 
         .select-arrow {
@@ -246,11 +256,11 @@
         }
 
         .stat-card {
-            background: white;
+            background: var(--card-bg, white);
             padding: 24px;
             border-radius: 12px;
             text-align: center;
-            border: 1px solid rgba(226, 232, 240, 0.8);
+            border: 1px solid var(--card-border, rgba(226, 232, 240, 0.8));
             transition: transform 0.2s;
         }
 
@@ -261,13 +271,13 @@
         .stat-value {
             font-size: 28px;
             font-weight: 700;
-            color: #3B82F6;
+            color: var(--accent-color, #3B82F6);
             margin: 0 0 8px;
         }
 
         .stat-label {
             font-size: 14px;
-            color: #64748b;
+            color: var(--text-secondary, #64748b);
             margin: 0;
             font-weight: 500;
         }
@@ -307,14 +317,14 @@
         }
 
         .btn-secondary {
-            background: white;
-            color: #334155;
-            border: 2px solid #e2e8f0;
+            background: var(--card-bg, white);
+            color: var(--text-primary, #334155);
+            border: 2px solid var(--card-border, #e2e8f0);
         }
 
         .btn-secondary:hover {
-            background: #f8fafc;
-            border-color: #cbd5e1;
+            background: var(--bg-secondary, #f8fafc);
+            border-color: var(--border-secondary, #cbd5e1);
             transform: translateY(-1px);
         }
 
@@ -340,9 +350,9 @@
         .version-info {
             text-align: center;
             padding: 20px;
-            color: #64748b;
+            color: var(--text-secondary, #64748b);
             font-size: 14px;
-            border-top: 1px solid rgba(226, 232, 240, 0.6);
+            border-top: 1px solid var(--border-secondary, rgba(226, 232, 240, 0.6));
         }
 
         /* History Section Styles */
@@ -586,16 +596,34 @@
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
+                </div>
 
+                <!-- Smart Shopping -->
+                <div class="settings-section">
+                    <h2 class="section-title">
+                        <span class="section-icon">🛒</span>
+                        Smart Shopping
+                    </h2>
+                    
                     <div class="setting-item">
                         <div class="setting-label">
-                            <div class="setting-title">Smart Shopping</div>
-                            <div class="setting-description">Detect prices on websites</div>
+                            <div class="setting-title">Enable Smart Shopping</div>
+                            <div class="setting-description">Automatically convert prices on shopping websites to your preferred currency</div>
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="smartShopping">
                             <span class="toggle-slider"></span>
                         </label>
+                    </div>
+
+                    <div class="smart-shopping-info" style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                        <h4 style="margin: 0 0 10px 0; color: #1e293b; font-size: 14px;">How Smart Shopping Works:</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #64748b; font-size: 13px; line-height: 1.5;">
+                            <li>Visit any shopping website (Amazon, eBay, etc.)</li>
+                            <li>Prices will automatically show your preferred currency</li>
+                            <li>Click on price overlays for detailed conversion info</li>
+                            <li>Set your preferred currency in "Base Currency" setting above</li>
+                        </ul>
                     </div>
                 </div>
 

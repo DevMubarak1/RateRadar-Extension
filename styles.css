@@ -1,5 +1,60 @@
 /* RateRadar Perfect UI/UX Styles */
 
+/* CSS Variables for Theme Support */
+:root {
+    /* Light Theme (Default) */
+    --bg-primary: transparent;
+    --bg-secondary: rgba(255, 255, 255, 0.12);
+    --bg-tertiary: rgba(255, 255, 255, 0.15);
+    --bg-card: rgba(255, 255, 255, 0.98);
+    --text-primary: #1a1a1a;
+    --text-secondary: #666;
+    --text-muted: #999;
+    --border-color: rgba(255, 255, 255, 0.18);
+    --border-secondary: rgba(226, 232, 240, 0.8);
+    --shadow-color: rgba(0, 0, 0, 0.12);
+    --accent-color: #3B82F6;
+    --success-color: #10b981;
+    --error-color: #ef4444;
+    --glass-bg: rgba(255, 255, 255, 0.12);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --input-bg: rgba(255, 255, 255, 0.15);
+    --input-border: rgba(255, 255, 255, 0.2);
+    --input-text: #1a1a1a;
+    --input-placeholder: #999;
+    --button-bg: rgba(255, 255, 255, 0.15);
+    --button-hover: rgba(255, 255, 255, 0.25);
+    --card-bg: rgba(255, 255, 255, 0.98);
+    --card-border: rgba(226, 232, 240, 0.8);
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+    --bg-primary: transparent;
+    --bg-secondary: rgba(0, 0, 0, 0.4);
+    --bg-tertiary: rgba(0, 0, 0, 0.5);
+    --bg-card: rgba(17, 24, 39, 0.95);
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-muted: #9ca3af;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --border-secondary: rgba(75, 85, 99, 0.5);
+    --shadow-color: rgba(0, 0, 0, 0.4);
+    --accent-color: #60a5fa;
+    --success-color: #34d399;
+    --error-color: #f87171;
+    --glass-bg: rgba(0, 0, 0, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --input-bg: rgba(0, 0, 0, 0.3);
+    --input-border: rgba(255, 255, 255, 0.1);
+    --input-text: #f9fafb;
+    --input-placeholder: #6b7280;
+    --button-bg: rgba(0, 0, 0, 0.3);
+    --button-hover: rgba(0, 0, 0, 0.5);
+    --card-bg: rgba(17, 24, 39, 0.95);
+    --card-border: rgba(75, 85, 99, 0.5);
+}
+
 /* Reset and base styles */
 * {
     margin: 0;
@@ -12,12 +67,13 @@ body {
     min-height: 500px;
     max-height: 620px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: transparent;
+    background: var(--bg-primary);
     margin: 0;
     padding: 0;
-    color: #1a1a1a;
+    color: var(--text-primary);
     overflow-x: hidden;
     overflow-y: auto;
+    transition: all 0.3s ease;
 }
 
 /* Utility classes */
@@ -31,12 +87,12 @@ body {
 
 /* Perfect Liquid Glass Effect */
 .liquid-glass {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--glass-bg);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--glass-border);
     border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 32px var(--shadow-color);
 }
 
 /* Header Section */
@@ -75,33 +131,33 @@ body {
 .app-title {
     font-size: 18px;
     font-weight: 700;
-    color: #1a1a1a;
+    color: var(--text-primary);
     margin-bottom: 2px;
 }
 
 .app-subtitle {
     font-size: 12px;
-    color: #666;
+    color: var(--text-secondary);
     font-weight: 500;
 }
 
 .icon-button {
     width: 36px;
     height: 36px;
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--button-bg);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--border-color);
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    color: #1a1a1a;
+    color: var(--text-primary);
 }
 
 .icon-button:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: var(--button-hover);
     transform: translateY(-1px);
 }
 
@@ -123,9 +179,9 @@ body {
 
 .tab-button {
     flex: 1;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--button-bg);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 12px 8px;
     cursor: pointer;
@@ -134,18 +190,18 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .tab-button:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #1a1a1a;
+    background: var(--button-hover);
+    color: var(--text-primary);
 }
 
 .tab-button.active {
-    background: rgba(255, 255, 255, 0.25);
+    background: var(--bg-secondary);
     border-color: rgba(102, 126, 234, 0.3);
-    color: #1a1a1a;
+    color: var(--text-primary);
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
 }
 
@@ -189,7 +245,7 @@ body {
     display: block;
     font-size: 12px;
     font-weight: 600;
-    color: #666;
+    color: var(--text-secondary);
     margin-bottom: 6px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -199,53 +255,136 @@ body {
     display: flex;
     gap: 8px;
     align-items: center;
+    position: relative;
+    animation: fadeIn 0.3s ease-out;
 }
 
 .amount-input {
     flex: 1;
     height: 44px;
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--input-bg);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--input-border);
     border-radius: 12px;
     padding: 0 16px;
     font-size: 14px;
     font-weight: 500;
-    color: #1a1a1a;
-    transition: all 0.2s ease;
+    color: var(--input-text);
+    transition: all 0.3s ease;
+    position: relative;
 }
 
 .amount-input:focus {
     outline: none;
-    border-color: rgba(102, 126, 234, 0.5);
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: var(--accent-color);
+    background: var(--bg-secondary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+    animation: fadeIn 0.2s ease-out;
 }
 
 .amount-input::placeholder {
-    color: #999;
+    color: var(--input-placeholder);
 }
 
+/* Animated focus line for inputs */
+.amount-input::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent-color), #60a5fa);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.amount-input:focus::after {
+    width: 100%;
+}
+
+/* Currency Select Dropdown */
 .currency-select {
     width: 70px;
     height: 44px;
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--input-bg);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--input-border);
     border-radius: 12px;
     padding: 0 8px;
     font-size: 12px;
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--input-text);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     flex-shrink: 0;
+    position: relative;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 20px; /* Make room for custom arrow */
 }
 
 .currency-select:focus {
     outline: none;
-    border-color: rgba(102, 126, 234, 0.5);
-    background: rgba(255, 255, 255, 0.2);
+    border-color: var(--accent-color);
+    background: var(--bg-secondary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Custom dropdown arrow - positioned inside the card */
+.currency-select::after {
+    content: '▼';
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 8px;
+    color: var(--text-secondary);
+    pointer-events: none;
+    transition: all 0.2s ease;
+    z-index: 1;
+}
+
+.currency-select:hover::after {
+    color: var(--text-primary);
+}
+
+.currency-select:focus::after {
+    color: var(--accent-color);
+    transform: translateY(-50%) rotate(180deg);
+}
+
+/* Remove the animated focus line for currency selects to avoid conflicts */
+.currency-select::before {
+    display: none;
+}
+
+/* Remove any trend indicators that might be showing incorrectly */
+.trend-indicator {
+    display: none !important;
+}
+
+/* Ensure rate display is clean */
+.rate-display .rate-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.rate-display .rate-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.rate-display .update-time {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 /* Swap Button */
@@ -532,6 +671,43 @@ body {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Input focus animations */
+.input-group {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.amount-input:focus,
+.currency-select:focus {
+    animation: fadeIn 0.2s ease-out;
 }
 
 /* Notifications */
