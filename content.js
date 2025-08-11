@@ -10,11 +10,89 @@ class RateRadarContent {
     }
 
     async init() {
+        console.log('RateRadar Content Script: Initializing...');
+        console.log('Current URL:', window.location.href);
+        console.log('Document ready state:', document.readyState);
+        
+        // Add a test message to verify script is running
+        this.addTestMessage();
+        
         await this.loadSettings();
         this.setupEventListeners();
-        if (this.isEnabled) {
+        
+        // Always try to detect prices on e-commerce sites
+        if (this.isEcommerceSite()) {
+            console.log('E-commerce site detected, enabling smart shopping...');
+            this.isEnabled = true;
+            this.detectPrices();
+        } else if (this.isEnabled) {
+            console.log('Smart shopping enabled by settings, detecting prices...');
             this.detectPrices();
         }
+        
+        // Add a visual indicator that the script is running
+        this.addScriptIndicator();
+        
+        // Test price detection after a delay
+        setTimeout(() => {
+            console.log('RateRadar: Running delayed price detection test...');
+            this.detectPrices();
+        }, 3000);
+    }
+
+    addTestMessage() {
+        // Add a test message to the page to verify the script is running
+        const testDiv = document.createElement('div');
+        testDiv.id = 'rateradar-test';
+        testDiv.style.cssText = `
+            position: fixed;
+            top: 50px;
+            right: 10px;
+            background: #10b981;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 999999;
+            opacity: 0.8;
+            pointer-events: none;
+        `;
+        testDiv.textContent = 'RateRadar Active';
+        document.body.appendChild(testDiv);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+            if (testDiv.parentNode) {
+                testDiv.parentNode.removeChild(testDiv);
+            }
+        }, 5000);
+    }
+
+    addScriptIndicator() {
+        // Add a small indicator to show the script is running
+        const indicator = document.createElement('div');
+        indicator.id = 'rateradar-indicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            background: #3B82F6;
+            border-radius: 50%;
+            z-index: 999999;
+            opacity: 0.7;
+            pointer-events: none;
+            display: ${this.isEnabled ? 'block' : 'none'};
+        `;
+        document.body.appendChild(indicator);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            if (indicator.parentNode) {
+                indicator.parentNode.removeChild(indicator);
+            }
+        }, 3000);
     }
 
     async loadSettings() {
@@ -23,14 +101,14 @@ class RateRadarContent {
             const settings = result.settings || {};
             this.isEnabled = settings.smartShopping || false;
             this.userCurrency = settings.baseCurrency || 'USD';
-            console.log('Smart shopping enabled:', this.isEnabled, 'Currency:', this.userCurrency);
+            console.log('RateRadar: Settings loaded - Smart shopping:', this.isEnabled, 'Currency:', this.userCurrency);
             
             // If smart shopping is enabled, detect prices immediately
             if (this.isEnabled) {
-                setTimeout(() => this.detectPrices(), 1000); // Small delay to ensure page is loaded
+                setTimeout(() => this.detectPrices(), 2000); // Longer delay to ensure page is fully loaded
             }
         } catch (error) {
-            console.error('Error loading settings:', error);
+            console.error('RateRadar: Error loading settings:', error);
         }
     }
 
@@ -44,7 +122,7 @@ class RateRadarContent {
         // Watch for dynamic content changes
         const observer = new MutationObserver(() => {
             if (this.isEnabled) {
-                this.detectPrices();
+                setTimeout(() => this.detectPrices(), 500); // Debounce price detection
             }
         });
 
@@ -65,9 +143,24 @@ class RateRadarContent {
                 });
             }
         });
+
+        // Also detect prices when page is fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                if (this.isEnabled) {
+                    setTimeout(() => this.detectPrices(), 1000);
+                }
+            });
+        } else {
+            if (this.isEnabled) {
+                setTimeout(() => this.detectPrices(), 1000);
+            }
+        }
     }
 
     handleMessage(request, sender, sendResponse) {
+        console.log('RateRadar: Received message:', request.action);
+        
         switch (request.action) {
             case 'enableSmartShopping':
                 this.isEnabled = true;
@@ -108,6 +201,8 @@ class RateRadarContent {
     }
 
     handleSettingChange(setting, value) {
+        console.log('RateRadar: Setting changed:', setting, value);
+        
         switch (setting) {
             case 'smartShopping':
                 this.isEnabled = value;
@@ -125,59 +220,33 @@ class RateRadarContent {
                 }
                 break;
                 
-            case 'theme':
-                // Theme changes are handled by the popup
-                break;
-                
-            case 'notifications':
-                // Notifications are handled by the background script
-                break;
-                
-            case 'soundAlerts':
-                // Sound alerts are handled by the background script
-                break;
-                
-            case 'autoRefresh':
-                // Auto refresh is handled by the popup
-                break;
-                
-            case 'refreshInterval':
-                // Refresh interval is handled by the popup
-                break;
-                
-            case 'decimalPlaces':
-                // Decimal places are handled by the popup
-                break;
-                
-            case 'cacheDuration':
-                // Cache duration is handled by the popup
-                break;
-                
-            case 'showTrends':
-                // Show trends is handled by the popup
-                break;
-                
             default:
-                console.log('Unknown setting change:', setting, value);
+                console.log('RateRadar: Unknown setting change:', setting, value);
         }
     }
 
     detectPrices() {
-        if (!this.isEnabled) return;
+        if (!this.isEnabled) {
+            console.log('RateRadar: Smart shopping disabled, skipping price detection');
+            return;
+        }
 
-        console.log('Detecting prices on page...');
+        console.log('RateRadar: Detecting prices on page...');
         const priceElements = this.findPriceElements();
         this.detectedPrices = [];
 
-        priceElements.forEach(element => {
+        console.log('RateRadar: Found', priceElements.length, 'potential price elements');
+
+        priceElements.forEach((element, index) => {
             const priceData = this.extractPriceData(element);
             if (priceData) {
                 this.detectedPrices.push(priceData);
                 this.highlightPrice(element, priceData);
+                console.log(`RateRadar: Price ${index + 1}:`, priceData.currency, priceData.amount);
             }
         });
 
-        console.log(`Found ${this.detectedPrices.length} prices on page`);
+        console.log(`RateRadar: Successfully processed ${this.detectedPrices.length} prices`);
 
         // Send detected prices to background script
         if (this.detectedPrices.length > 0) {
@@ -185,6 +254,8 @@ class RateRadarContent {
                 action: 'pricesDetected',
                 prices: this.detectedPrices,
                 url: window.location.href
+            }).catch(error => {
+                console.log('RateRadar: Could not send prices to background script:', error);
             });
         }
     }
@@ -236,7 +307,27 @@ class RateRadarContent {
             '.price-current',
             '.price-value',
             '.product__price',
-            '.product-price__value'
+            '.product-price__value',
+            
+            // Amazon specific
+            '.a-price-whole',
+            '.a-price-fraction',
+            '.a-price-symbol',
+            '.a-price',
+            '.a-offscreen',
+            
+            // eBay specific
+            '.x-price-primary',
+            '.x-price-original',
+            '.x-price-current',
+            
+            // General e-commerce
+            '[class*="price"]',
+            '[class*="Price"]',
+            'span:contains("$")',
+            'span:contains("€")',
+            'span:contains("£")',
+            'span:contains("₦")'
         ];
 
         const elements = [];
@@ -249,13 +340,24 @@ class RateRadarContent {
             }
         });
 
-        // Remove duplicates
-        const uniqueElements = [...new Set(elements)];
+        // Remove duplicates and filter out elements that are too small
+        const uniqueElements = [...new Set(elements)].filter(element => {
+            const text = element.textContent.trim();
+            return text.length > 0 && text.length < 100; // Filter out very long text
+        });
+        
         return uniqueElements;
     }
 
     extractPriceData(element) {
         const text = element.textContent.trim();
+        
+        // Skip if text is too long or empty
+        if (!text || text.length > 100) {
+            return null;
+        }
+        
+        console.log('RateRadar: Analyzing element text:', text);
         
         // Enhanced price regex patterns
         const pricePatterns = [
@@ -280,6 +382,7 @@ class RateRadarContent {
                 }
 
                 if (!isNaN(amount) && amount > 0 && amount < 1000000) { // Reasonable price range
+                    console.log('RateRadar: Found price:', currency, amount, 'in text:', text);
                     return {
                         currency: currency,
                         amount: amount,
@@ -288,6 +391,25 @@ class RateRadarContent {
                         timestamp: Date.now()
                     };
                 }
+            }
+        }
+
+        // Try to find prices without currency symbols (common on some sites)
+        const numberPattern = /(\d+(?:,\d{3})*(?:\.\d{2})?)/g;
+        const numbers = [...text.matchAll(numberPattern)];
+        
+        if (numbers.length > 0) {
+            const number = parseFloat(numbers[0][1].replace(/,/g, ''));
+            if (!isNaN(number) && number > 0 && number < 1000000) {
+                // Assume USD if no currency symbol found
+                console.log('RateRadar: Found number (assuming USD):', number, 'in text:', text);
+                return {
+                    currency: 'USD',
+                    amount: number,
+                    originalText: text,
+                    element: element,
+                    timestamp: Date.now()
+                };
             }
         }
 
@@ -380,7 +502,9 @@ class RateRadarContent {
             // Store reference for cleanup
             element.rateradarOverlay = overlay;
             
-            console.log(`Added overlay: ${priceData.currency} ${priceData.amount} → ${this.userCurrency} ${convertedPrice.toFixed(2)}`);
+            console.log(`RateRadar: Added overlay: ${priceData.currency} ${priceData.amount} → ${this.userCurrency} ${convertedPrice.toFixed(2)}`);
+        } else {
+            console.log('RateRadar: No conversion needed or conversion failed');
         }
     }
 
@@ -561,15 +685,55 @@ class RateRadarContent {
         const ecommerceKeywords = [
             'amazon', 'ebay', 'etsy', 'shopify', 'woocommerce',
             'walmart', 'target', 'bestbuy', 'newegg', 'aliexpress',
-            'shop', 'store', 'buy', 'cart', 'checkout', 'product'
+            'shop', 'store', 'buy', 'cart', 'checkout', 'product',
+            'price', 'sale', 'deal', 'offer', 'discount'
         ];
 
         const url = window.location.hostname.toLowerCase();
         const pageText = document.body.textContent.toLowerCase();
         
-        return ecommerceKeywords.some(keyword => 
-            url.includes(keyword) || pageText.includes(keyword)
-        );
+        // Check URL first
+        const urlMatch = ecommerceKeywords.some(keyword => url.includes(keyword));
+        if (urlMatch) {
+            console.log('RateRadar: E-commerce site detected by URL:', url);
+            return true;
+        }
+        
+        // Check page content
+        const contentMatch = ecommerceKeywords.some(keyword => pageText.includes(keyword));
+        if (contentMatch) {
+            console.log('RateRadar: E-commerce site detected by content');
+            return true;
+        }
+        
+        // Check for common e-commerce elements
+        const ecommerceSelectors = [
+            '[data-price]',
+            '.price',
+            '.product-price',
+            '.add-to-cart',
+            '.buy-now',
+            '.shopping-cart',
+            '.checkout',
+            '.product',
+            '.item'
+        ];
+        
+        const hasEcommerceElements = ecommerceSelectors.some(selector => {
+            try {
+                return document.querySelector(selector) !== null;
+            } catch (e) {
+                return false;
+            }
+        });
+        
+        if (hasEcommerceElements) {
+            console.log('RateRadar: E-commerce site detected by elements');
+            return true;
+        }
+        
+        console.log('RateRadar: Not an e-commerce site');
+        return false;
     }
 }
 

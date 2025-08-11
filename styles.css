@@ -26,33 +26,41 @@
     --button-hover: rgba(255, 255, 255, 0.25);
     --card-bg: rgba(255, 255, 255, 0.98);
     --card-border: rgba(226, 232, 240, 0.8);
+    --dropdown-bg: rgba(255, 255, 255, 0.95);
+    --dropdown-border: rgba(226, 232, 240, 0.8);
+    --dropdown-text: #1a1a1a;
+    --dropdown-hover: rgba(59, 130, 246, 0.1);
 }
 
-/* Dark Theme */
+/* Dark Theme - COMPLETELY OVERHAULED */
 [data-theme="dark"] {
     --bg-primary: transparent;
-    --bg-secondary: rgba(0, 0, 0, 0.4);
-    --bg-tertiary: rgba(0, 0, 0, 0.5);
-    --bg-card: rgba(17, 24, 39, 0.95);
-    --text-primary: #f9fafb;
-    --text-secondary: #d1d5db;
-    --text-muted: #9ca3af;
-    --border-color: rgba(255, 255, 255, 0.1);
-    --border-secondary: rgba(75, 85, 99, 0.5);
-    --shadow-color: rgba(0, 0, 0, 0.4);
+    --bg-secondary: rgba(0, 0, 0, 0.6);
+    --bg-tertiary: rgba(0, 0, 0, 0.7);
+    --bg-card: rgba(15, 23, 42, 0.95);
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --border-color: rgba(255, 255, 255, 0.15);
+    --border-secondary: rgba(51, 65, 85, 0.8);
+    --shadow-color: rgba(0, 0, 0, 0.5);
     --accent-color: #60a5fa;
     --success-color: #34d399;
     --error-color: #f87171;
-    --glass-bg: rgba(0, 0, 0, 0.4);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --input-bg: rgba(0, 0, 0, 0.3);
-    --input-border: rgba(255, 255, 255, 0.1);
-    --input-text: #f9fafb;
-    --input-placeholder: #6b7280;
-    --button-bg: rgba(0, 0, 0, 0.3);
-    --button-hover: rgba(0, 0, 0, 0.5);
-    --card-bg: rgba(17, 24, 39, 0.95);
-    --card-border: rgba(75, 85, 99, 0.5);
+    --glass-bg: rgba(0, 0, 0, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --input-bg: rgba(0, 0, 0, 0.4);
+    --input-border: rgba(255, 255, 255, 0.15);
+    --input-text: #f8fafc;
+    --input-placeholder: #64748b;
+    --button-bg: rgba(0, 0, 0, 0.4);
+    --button-hover: rgba(0, 0, 0, 0.6);
+    --card-bg: rgba(15, 23, 42, 0.95);
+    --card-border: rgba(51, 65, 85, 0.8);
+    --dropdown-bg: rgba(15, 23, 42, 0.98);
+    --dropdown-border: rgba(51, 65, 85, 0.8);
+    --dropdown-text: #f8fafc;
+    --dropdown-hover: rgba(96, 165, 250, 0.2);
 }
 
 /* Reset and base styles */
@@ -305,6 +313,13 @@ body {
 }
 
 /* Currency Select Dropdown */
+.currency-select-wrapper {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* Currency Select Dropdown */
 .currency-select {
     width: 70px;
     height: 44px;
@@ -312,18 +327,17 @@ body {
     backdrop-filter: blur(12px);
     border: 1px solid var(--input-border);
     border-radius: 12px;
-    padding: 0 8px;
+    padding: 0 25px 0 8px; /* Make room for dropdown icon */
     font-size: 12px;
     font-weight: 600;
     color: var(--input-text);
     cursor: pointer;
     transition: all 0.3s ease;
-    flex-shrink: 0;
-    position: relative;
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    padding-right: 20px; /* Make room for custom arrow */
+    position: relative;
+    z-index: 1;
 }
 
 .currency-select:focus {
@@ -335,27 +349,31 @@ body {
     animation: fadeIn 0.2s ease-out;
 }
 
-/* Custom dropdown arrow - positioned inside the card */
-.currency-select::after {
-    content: '▼';
+/* Dropdown Icon */
+.dropdown-icon {
     position: absolute;
-    right: 6px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
     font-size: 8px;
     color: var(--text-secondary);
     pointer-events: none;
     transition: all 0.2s ease;
-    z-index: 1;
+    z-index: 2;
 }
 
-.currency-select:hover::after {
+.currency-select:hover .dropdown-icon {
     color: var(--text-primary);
 }
 
-.currency-select:focus::after {
+.currency-select:focus .dropdown-icon {
     color: var(--accent-color);
     transform: translateY(-50%) rotate(180deg);
+}
+
+/* Remove the old custom arrow */
+.currency-select::after {
+    display: none;
 }
 
 /* Remove the animated focus line for currency selects to avoid conflicts */
@@ -793,4 +811,157 @@ body {
     body {
         width: 320px;
     }
+} 
+
+/* Enhanced Dark Theme Styles */
+[data-theme="dark"] .liquid-glass {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .app-title {
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .app-subtitle {
+    color: #cbd5e1;
+}
+
+[data-theme="dark"] .tab-button {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .tab-button:hover {
+    background: rgba(0, 0, 0, 0.6);
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .tab-button.active {
+    background: rgba(96, 165, 250, 0.2);
+    border-color: rgba(96, 165, 250, 0.3);
+    color: #f8fafc;
+    box-shadow: 0 2px 8px rgba(96, 165, 250, 0.3);
+}
+
+[data-theme="dark"] .input-label {
+    color: #cbd5e1;
+}
+
+[data-theme="dark"] .amount-input {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .amount-input::placeholder {
+    color: #64748b;
+}
+
+[data-theme="dark"] .amount-input:focus {
+    border-color: #60a5fa;
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+}
+
+[data-theme="dark"] .currency-select {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .currency-select:focus {
+    border-color: #60a5fa;
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+}
+
+[data-theme="dark"] .swap-button {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .swap-button:hover {
+    background: rgba(0, 0, 0, 0.6);
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .rate-display {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .rate-text {
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .update-time {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .crypto-price-display {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .price-text {
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .action-button.secondary {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .action-button.secondary:hover {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .period-button {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .period-button:hover {
+    background: rgba(0, 0, 0, 0.6);
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .period-button.active {
+    background: rgba(96, 165, 250, 0.2);
+    border-color: rgba(96, 165, 250, 0.3);
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .status-bar {
+    background: rgba(0, 0, 0, 0.4);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .status-text {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .loading-content {
+    background: rgba(15, 23, 42, 0.95);
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .loading-text {
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .notification {
+    background: rgba(15, 23, 42, 0.95);
+    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .notification-text {
+    color: #f8fafc;
 } 
