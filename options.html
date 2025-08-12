@@ -984,3 +984,99 @@
     <script src="options.js"></script>
 </body>
 </html> 
+                    <!-- Notifications -->
+                    <div class="settings-card">
+                        <h2 class="settings-title">Notifications</h2>
+                        
+                        <div class="settings-group">
+                            <div class="flex-between">
+                                <div>
+                                    <label class="settings-label">Enable Notifications</label>
+                                    <p class="settings-description">Show desktop notifications for rate alerts</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notifications">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <div class="flex-between">
+                                <div>
+                                    <label class="settings-label">Sound Alerts</label>
+                                    <p class="settings-description">Play sound when alerts trigger</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="soundAlerts">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <div class="flex-between">
+                                <div>
+                                    <label class="settings-label">Smart Shopping</label>
+                                    <p class="settings-description">Detect prices on shopping websites</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="smartShopping">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts Management -->
+                <div class="space-y-6">
+                    <div class="settings-card">
+                        <h2 class="settings-title">Rate Alerts</h2>
+                        
+                        <div class="settings-group">
+                            <button id="addAlertBtn" class="btn btn-primary">Add New Alert</button>
+                        </div>
+                        
+                        <div class="alerts-list" id="alertsList">
+                            <!-- Alerts will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Data Management -->
+                    <div class="settings-card">
+                        <h2 class="settings-title">Data Management</h2>
+                        
+                        <div class="settings-group">
+                            <button id="exportDataBtn" class="btn btn-secondary">Export Data</button>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <button id="clearDataBtn" class="btn btn-secondary">Clear All Data</button>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <button id="resetSettingsBtn" class="btn btn-secondary">Reset to Defaults</button>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="settings-card">
+                        <h2 class="settings-title">Actions</h2>
+                        
+                        <div class="settings-group">
+                            <button id="saveSettingsBtn" class="btn btn-primary">Save Settings</button>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <div id="statusMessage" class="text-sm"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="options.js"></script>
+</body>
+</html> 

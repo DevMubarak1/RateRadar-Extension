@@ -291,7 +291,7 @@
                 <div class="input-section">
                     <label class="input-label">FROM</label>
                     <div class="input-group">
-                        <input type="number" id="fromCryptoAmount" placeholder="0.00" class="amount-input" step="0.000001">
+                        <input type="number" id="fromCryptoAmount" placeholder="0.00" class="amount-input" step="0.000001" value="1">
                         <div class="currency-select-wrapper">
                             <select id="fromCrypto" class="currency-select">
                                 <option value="bitcoin">BTC</option>
@@ -532,6 +532,16 @@
                         <span id="cryptoPrice" class="price-text">$0.00</span>
                         <span id="cryptoChange" class="change-text positive">+0.00%</span>
                     </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button id="setCryptoAlertBtn" class="action-button primary" title="Set crypto alert">
+                        🔔 Alert
+                    </button>
+                    <button id="favoriteCryptoBtn" class="action-button secondary" title="Add crypto to favorites">
+                        ⭐ Favorite
+                    </button>
                 </div>
             </div>
         </div>

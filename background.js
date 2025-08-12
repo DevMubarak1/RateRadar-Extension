@@ -388,3 +388,118 @@ class RateRadarBackground {
 
 // Initialize background script
 const rateRadarBackground = new RateRadarBackground(); 
+            refreshInterval: 5
+        };
+
+        chrome.storage.sync.set({ settings: defaultSettings }, () => {
+            console.log('RateRadar installed with default settings');
+        });
+    }
+
+    // Smart shopping alert functionality (future feature)
+    async detectProductPrices() {
+        // This would be implemented in content script
+        // Background script would handle the alert logic
+        console.log('Product price detection not yet implemented');
+    }
+
+    // Analytics and tracking (for monetization)
+    async trackEvent(eventName, eventData) {
+        // This would send analytics data to your backend
+        console.log('Analytics event:', eventName, eventData);
+    }
+}
+
+// Initialize the background service worker
+const rateRadarBackground = new RateRadarBackground(); 
+            
+            // Play sound
+            if (this.settings.soundAlerts) {
+                this.playSound('alert');
+            }
+            
+            console.log('Alert triggered:', alert, 'Current rate:', currentRate);
+            
+        } catch (error) {
+            console.error('Error triggering alert:', error);
+        }
+    }
+
+    showNotification(title, message, type = 'info') {
+        const notificationId = `rateradar_${Date.now()}`;
+        
+        const notificationOptions = {
+            type: 'basic',
+            iconUrl: 'icons/icon.png',
+            title: title,
+            message: message,
+            priority: type === 'alert' ? 2 : 1
+        };
+        
+        chrome.notifications.create(notificationId, notificationOptions);
+    }
+
+    playSound(soundType) {
+        // Create audio context for sound alerts
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        let frequency, duration;
+        
+        switch (soundType) {
+            case 'alert':
+                frequency = 800;
+                duration = 0.3;
+                break;
+            case 'success':
+                frequency = 600;
+                duration = 0.2;
+                break;
+            case 'error':
+                frequency = 400;
+                duration = 0.4;
+                break;
+            default:
+                frequency = 500;
+                duration = 0.2;
+        }
+        
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration);
+    }
+
+    handleNotificationClick(notificationId) {
+        // Open the extension popup when notification is clicked
+        chrome.action.openPopup();
+    }
+
+    handlePricesDetected(prices, url) {
+        // Log detected prices for analytics
+        console.log('Prices detected on:', url, 'Count:', prices.length);
+        
+        // Could send to analytics service here
+        // this.sendAnalytics('prices_detected', { url, count: prices.length });
+    }
+
+    setupAlarms() {
+        // Set up periodic tasks
+        chrome.alarms.create('periodic_check', {
+            delayInMinutes: 1,
+            periodInMinutes: 30 // Check every 30 minutes
+        });
+    }
+}
+
+// Initialize background script
+const rateRadarBackground = new RateRadarBackground(); 

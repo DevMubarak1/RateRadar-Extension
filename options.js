@@ -615,3 +615,158 @@ class RateRadarOptions {
 document.addEventListener('DOMContentLoaded', () => {
     new RateRadarOptions();
 }); 
+    createAlertHTML(alert) {
+        const isActive = alert.active ? 'Active' : 'Inactive';
+        const statusClass = alert.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+        const alertType = alert.alertType === 'above' ? 'Above' : 'Below';
+        const isPriceAlert = alert.isPriceAlert ? ' (Price Alert)' : '';
+
+        return `
+            <div class="border border-gray-200 rounded-lg p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h4 class="font-medium text-gray-900">
+                            ${alert.fromCurrency} → ${alert.toCurrency}${isPriceAlert}
+                        </h4>
+                        <p class="text-sm text-gray-600">
+                            Alert when rate is ${alertType.toLowerCase()} ${alert.targetRate.toFixed(4)}
+                        </p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <span class="px-2 py-1 text-xs rounded-full ${statusClass}">
+                            ${isActive}
+                        </span>
+                        <button onclick="rateRadarOptions.toggleAlert('${alert.id}')" class="text-blue-600 hover:text-blue-800 text-sm">
+                            ${alert.active ? 'Deactivate' : 'Activate'}
+                        </button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-500">
+                        Created: ${new Date(alert.createdAt).toLocaleDateString()}
+                    </span>
+                    <button onclick="rateRadarOptions.deleteAlert('${alert.id}')" class="text-red-600 hover:text-red-800 text-sm">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    async getAlerts() {
+        return new Promise((resolve) => {
+            chrome.storage.sync.get(['alerts'], (result) => {
+                resolve(result.alerts || []);
+            });
+        });
+    }
+
+    async toggleAlert(alertId) {
+        try {
+            const alerts = await this.getAlerts();
+            const alertIndex = alerts.findIndex(alert => alert.id === parseInt(alertId));
+            
+            if (alertIndex !== -1) {
+                alerts[alertIndex].active = !alerts[alertIndex].active;
+                await chrome.storage.sync.set({ alerts });
+                this.showAlertModal(); // Refresh the modal
+                this.showStatus(`Alert ${alerts[alertIndex].active ? 'activated' : 'deactivated'}`, 'success');
+            }
+        } catch (error) {
+            console.error('Error toggling alert:', error);
+            this.showStatus('Error updating alert', 'error');
+        }
+    }
+
+    async deleteAlert(alertId) {
+        if (confirm('Are you sure you want to delete this alert?')) {
+            try {
+                const alerts = await this.getAlerts();
+                const filteredAlerts = alerts.filter(alert => alert.id !== parseInt(alertId));
+                await chrome.storage.sync.set({ alerts: filteredAlerts });
+                this.showAlertModal(); // Refresh the modal
+                this.showStatus('Alert deleted', 'success');
+            } catch (error) {
+                console.error('Error deleting alert:', error);
+                this.showStatus('Error deleting alert', 'error');
+            }
+        }
+    }
+
+    async exportData() {
+        try {
+            const data = await chrome.storage.sync.get();
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `rateradar-data-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            this.showStatus('Data exported successfully', 'success');
+        } catch (error) {
+            console.error('Error exporting data:', error);
+            this.showStatus('Error exporting data', 'error');
+        }
+    }
+
+    async clearData() {
+        if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+            try {
+                await chrome.storage.sync.clear();
+                await chrome.storage.local.clear();
+                this.showStatus('All data cleared', 'success');
+                
+                // Reload settings to defaults
+                setTimeout(() => {
+                    this.loadSettings();
+                }, 1000);
+            } catch (error) {
+                console.error('Error clearing data:', error);
+                this.showStatus('Error clearing data', 'error');
+            }
+        }
+    }
+
+    showStatus(message, type = 'success') {
+        const statusDiv = document.getElementById('statusMessage');
+        const statusText = document.getElementById('statusText');
+        
+        // Remove existing classes
+        statusDiv.className = 'mt-4';
+        
+        // Add appropriate classes based on type
+        if (type === 'success') {
+            statusDiv.classList.add('bg-green-100', 'border', 'border-green-400', 'text-green-700', 'px-4', 'py-3', 'rounded');
+        } else if (type === 'error') {
+            statusDiv.classList.add('bg-red-100', 'border', 'border-red-400', 'text-red-700', 'px-4', 'py-3', 'rounded');
+        } else {
+            statusDiv.classList.add('bg-blue-100', 'border', 'border-blue-400', 'text-blue-700', 'px-4', 'py-3', 'rounded');
+        }
+        
+        statusText.textContent = message;
+        statusDiv.classList.remove('hidden');
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+            statusDiv.classList.add('hidden');
+        }, 3000);
+    }
+
+    // Make methods available globally for inline onclick handlers
+    toggleAlert(alertId) {
+        this.toggleAlert(alertId);
+    }
+
+    deleteAlert(alertId) {
+        this.deleteAlert(alertId);
+    }
+}
+
+// Initialize RateRadar options when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    window.rateRadarOptions = new RateRadarOptions();
+}); 

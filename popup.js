@@ -33,7 +33,9 @@ class RateRadar {
             this.loadSettings().then(() => {
                 this.setupEventListeners();
                 this.loadCurrencies();
-                this.switchTab('converter');
+                this.checkTabContent(); // Add this line to check tab content
+                // Initialize with crypto tab visible by default
+                this.switchTab('crypto');
                 this.checkConnection();
                 this.applyTheme();
                 console.log('RateRadar initialized successfully');
@@ -42,6 +44,63 @@ class RateRadar {
             });
         } catch (error) {
             console.error('Error during initialization:', error);
+        }
+    }
+
+    checkTabContent() {
+        console.log('RateRadar: Checking tab content structure...');
+        
+        // Check if crypto tab content exists
+        const cryptoTab = document.getElementById('crypto-tab');
+        if (cryptoTab) {
+            console.log('RateRadar: Crypto tab found:', cryptoTab);
+            console.log('RateRadar: Crypto tab children:', cryptoTab.children.length);
+            console.log('RateRadar: Crypto tab HTML:', cryptoTab.innerHTML.substring(0, 200) + '...');
+            
+            // Check parent elements for any hiding styles
+            let parent = cryptoTab.parentElement;
+            let level = 0;
+            while (parent && level < 5) {
+                const computedStyle = window.getComputedStyle(parent);
+                console.log(`RateRadar: Parent level ${level}:`, parent.tagName, parent.className);
+                console.log(`RateRadar: Parent display:`, computedStyle.display);
+                console.log(`RateRadar: Parent visibility:`, computedStyle.visibility);
+                console.log(`RateRadar: Parent opacity:`, computedStyle.opacity);
+                console.log(`RateRadar: Parent height:`, computedStyle.height);
+                console.log(`RateRadar: Parent overflow:`, computedStyle.overflow);
+                
+                // Check if parent is hiding the content
+                if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden' || computedStyle.opacity === '0') {
+                    console.warn(`RateRadar: Parent level ${level} is hiding content!`);
+                }
+                
+                parent = parent.parentElement;
+                level++;
+            }
+        } else {
+            console.error('RateRadar: Crypto tab content not found!');
+        }
+        
+        // Check if converter tab content exists
+        const converterTab = document.getElementById('converter-tab');
+        if (converterTab) {
+            console.log('RateRadar: Converter tab found:', converterTab);
+        } else {
+            console.error('RateRadar: Converter tab content not found!');
+        }
+        
+        // List all tab contents
+        document.querySelectorAll('.tab-content').forEach(content => {
+            console.log('RateRadar: Tab content found:', content.id, 'display:', window.getComputedStyle(content).display);
+        });
+        
+        // Check content area
+        const contentArea = document.querySelector('.content-area');
+        if (contentArea) {
+            const computedStyle = window.getComputedStyle(contentArea);
+            console.log('RateRadar: Content area display:', computedStyle.display);
+            console.log('RateRadar: Content area height:', computedStyle.height);
+            console.log('RateRadar: Content area overflow:', computedStyle.overflow);
         }
     }
 
@@ -319,7 +378,9 @@ class RateRadar {
         const elements = {
             setAlertBtn: document.getElementById('setAlertBtn'),
             favoriteBtn: document.getElementById('favoriteBtn'),
-            settingsBtn: document.getElementById('settingsBtn')
+            settingsBtn: document.getElementById('settingsBtn'),
+            setCryptoAlertBtn: document.getElementById('setCryptoAlertBtn'),
+            favoriteCryptoBtn: document.getElementById('favoriteCryptoBtn')
         };
         
         if (elements.setAlertBtn) {
@@ -335,6 +396,16 @@ class RateRadar {
         if (elements.settingsBtn) {
             elements.settingsBtn.addEventListener('click', () => {
                 try { this.openSettings(); } catch (e) { console.error('Error opening settings:', e); }
+            });
+        }
+        if (elements.setCryptoAlertBtn) {
+            elements.setCryptoAlertBtn.addEventListener('click', () => {
+                try { this.setCryptoAlert(); } catch (e) { console.error('Error setting crypto alert:', e); }
+            });
+        }
+        if (elements.favoriteCryptoBtn) {
+            elements.favoriteCryptoBtn.addEventListener('click', () => {
+                try { this.toggleCryptoFavorite(); } catch (e) { console.error('Error toggling crypto favorite:', e); }
             });
         }
     }
@@ -354,36 +425,90 @@ class RateRadar {
 
     switchTab(tabName) {
         try {
+            console.log('RateRadar: Switching to tab:', tabName);
+            
             // Hide all tab contents
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
+                content.style.display = 'none'; // Force hide
+                console.log('RateRadar: Removed active from:', content.id);
             });
 
             // Remove active class from all tab buttons
             document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.remove('active');
+                console.log('RateRadar: Removed active from button:', btn.dataset.tab);
             });
 
             // Show selected tab content
             const selectedTab = document.getElementById(`${tabName}-tab`);
             if (selectedTab) {
                 selectedTab.classList.add('active');
+                selectedTab.style.display = 'block'; // Force show
+                selectedTab.style.visibility = 'visible';
+                selectedTab.style.opacity = '1';
+                selectedTab.style.position = 'relative';
+                selectedTab.style.zIndex = '1';
+                
+                console.log('RateRadar: Tab content activated:', selectedTab.id);
+                console.log('RateRadar: Tab content display style:', selectedTab.style.display);
+                console.log('RateRadar: Tab content classes:', selectedTab.className);
+                console.log('RateRadar: Tab content computed style:', window.getComputedStyle(selectedTab).display);
+                console.log('RateRadar: Tab content visibility:', window.getComputedStyle(selectedTab).visibility);
+                console.log('RateRadar: Tab content opacity:', window.getComputedStyle(selectedTab).opacity);
+                
+                // Force display block if needed
+                if (window.getComputedStyle(selectedTab).display === 'none') {
+                    console.log('RateRadar: Forcing display block on tab content');
+                    selectedTab.style.display = 'block';
+                }
+                
+                // Check if content is actually visible
+                const rect = selectedTab.getBoundingClientRect();
+                console.log('RateRadar: Tab content dimensions:', rect.width, 'x', rect.height);
+                console.log('RateRadar: Tab content position:', rect.top, rect.left);
+                
+                // Force a repaint
+                selectedTab.offsetHeight;
+                
+            } else {
+                console.warn('RateRadar: Tab content not found:', `${tabName}-tab`);
+                // List all tab contents to help debug
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    console.log('RateRadar: Available tab content:', content.id);
+                });
             }
             
             // Add active class to selected tab button
             const selectedButton = document.querySelector(`[data-tab="${tabName}"]`);
             if (selectedButton) {
                 selectedButton.classList.add('active');
+                console.log('RateRadar: Tab button activated:', selectedButton.dataset.tab);
+            } else {
+                console.warn('RateRadar: Tab button not found:', `[data-tab="${tabName}"]`);
+                // List all tab buttons to help debug
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    console.log('RateRadar: Available tab button:', btn.dataset.tab);
+                });
             }
 
             this.currentTab = tabName;
 
             // Load data for the selected tab
             if (tabName === 'converter') {
+                console.log('RateRadar: Loading converter data');
                 this.convertCurrency();
             } else if (tabName === 'crypto') {
+                console.log('RateRadar: Loading crypto data');
+                
+                // Ensure crypto tab has default values
+                const fromCryptoAmount = document.getElementById('fromCryptoAmount');
+                if (fromCryptoAmount && !fromCryptoAmount.value) {
+                    fromCryptoAmount.value = '1';
+                }
                 this.convertCrypto();
             } else if (tabName === 'history') {
+                console.log('RateRadar: Loading history data');
                 this.loadHistory(7);
             }
         } catch (error) {
@@ -539,6 +664,8 @@ class RateRadar {
 
     async convertCrypto() {
         try {
+            console.log('RateRadar: convertCrypto called');
+            
             const elements = {
                 fromCryptoAmount: document.getElementById('fromCryptoAmount'),
                 toCryptoAmount: document.getElementById('toCryptoAmount'),
@@ -548,6 +675,15 @@ class RateRadar {
                 cryptoChange: document.getElementById('cryptoChange')
             };
             
+            console.log('RateRadar: Crypto elements found:', {
+                fromCryptoAmount: !!elements.fromCryptoAmount,
+                toCryptoAmount: !!elements.toCryptoAmount,
+                fromCrypto: !!elements.fromCrypto,
+                toCrypto: !!elements.toCrypto,
+                cryptoPrice: !!elements.cryptoPrice,
+                cryptoChange: !!elements.cryptoChange
+            });
+            
             // Check if all required elements exist
             if (!elements.fromCryptoAmount || !elements.toCryptoAmount || !elements.fromCrypto || 
                 !elements.toCrypto || !elements.cryptoPrice || !elements.cryptoChange) {
@@ -555,12 +691,22 @@ class RateRadar {
                 return;
             }
             
-            const fromAmount = parseFloat(elements.fromCryptoAmount.value) || 0;
+            // Set default value if empty
+            if (!elements.fromCryptoAmount.value) {
+                elements.fromCryptoAmount.value = '1';
+            }
+            
+            const fromAmount = parseFloat(elements.fromCryptoAmount.value) || 1; // Default to 1 if 0
             const fromCrypto = elements.fromCrypto.value;
             const toCrypto = elements.toCrypto.value;
 
+            console.log('RateRadar: Crypto conversion values:', { fromAmount, fromCrypto, toCrypto });
+
             if (fromAmount === 0) {
                 elements.toCryptoAmount.value = '';
+                elements.cryptoPrice.textContent = '$0.00';
+                elements.cryptoChange.textContent = '+0.00%';
+                elements.cryptoChange.className = 'change-text positive';
                 return;
             }
 
@@ -568,6 +714,8 @@ class RateRadar {
 
             // Get crypto rate
             const cryptoData = await this.getCryptoRate(fromCrypto, toCrypto);
+            
+            console.log('RateRadar: Crypto data received:', cryptoData);
             
             if (cryptoData) {
                 const convertedAmount = fromAmount * cryptoData.rate;
@@ -578,6 +726,7 @@ class RateRadar {
                 
                 this.cryptoPrice = cryptoData.price;
                 this.updateConnectionStatus(true);
+                console.log('RateRadar: Crypto conversion completed successfully');
             } else {
                 // Crypto API failed
                 elements.toCryptoAmount.value = '0.00';
@@ -586,6 +735,7 @@ class RateRadar {
                 elements.cryptoChange.className = 'change-text positive';
                 this.updateConnectionStatus(false);
                 this.showError('Unable to get crypto rates');
+                console.log('RateRadar: Crypto API failed');
             }
         } catch (error) {
             console.error('Error in convertCrypto:', error);
@@ -599,10 +749,13 @@ class RateRadar {
     async getCryptoRate(fromCrypto, toCrypto) {
         const cacheKey = `crypto_${fromCrypto}/${toCrypto}`;
         
+        console.log('RateRadar: getCryptoRate called with:', { fromCrypto, toCrypto });
+        
         // Check cache first
         if (this.cache.has(cacheKey)) {
             const cached = this.cache.get(cacheKey);
             if (Date.now() - cached.timestamp < this.cacheTimeout) {
+                console.log('RateRadar: Using cached crypto data');
                 return cached.data;
             }
         }
@@ -616,11 +769,71 @@ class RateRadar {
                 'bitcoin': 'bitcoin',
                 'ethereum': 'ethereum', 
                 'cardano': 'cardano',
-                'solana': 'solana'
+                'solana': 'solana',
+                'binancecoin': 'binancecoin',
+                'ripple': 'ripple',
+                'polkadot': 'polkadot',
+                'dogecoin': 'dogecoin',
+                'avalanche-2': 'avalanche-2',
+                'polygon': 'matic-network',
+                'chainlink': 'chainlink',
+                'uniswap': 'uniswap',
+                'litecoin': 'litecoin',
+                'bitcoin-cash': 'bitcoin-cash',
+                'stellar': 'stellar',
+                'vechain': 'vechain',
+                'filecoin': 'filecoin',
+                'cosmos': 'cosmos',
+                'monero': 'monero',
+                'algorand': 'algorand',
+                'tezos': 'tezos',
+                'aave': 'aave',
+                'compound': 'compound-governance-token',
+                'sushi': 'sushi',
+                'pancakeswap-token': 'pancakeswap-token',
+                'curve-dao-token': 'curve-dao-token',
+                'yearn-finance': 'yearn-finance',
+                'synthetix-network-token': 'havven',
+                '0x': '0x',
+                'balancer': 'balancer',
+                '1inch': '1inch',
+                'dash': 'dash',
+                'zcash': 'zcash',
+                'nem': 'nem',
+                'iota': 'iota',
+                'neo': 'neo',
+                'qtum': 'qtum',
+                'waves': 'waves',
+                'nano': 'nano',
+                'icon': 'icon',
+                'ontology': 'ontology',
+                'zilliqa': 'zilliqa',
+                'harmony': 'harmony',
+                'elrond-erd-2': 'elrond-erd-2',
+                'near': 'near',
+                'fantom': 'fantom',
+                'the-graph': 'the-graph',
+                'decentraland': 'decentraland',
+                'sandbox': 'the-sandbox',
+                'enjincoin': 'enjincoin',
+                'axie-infinity': 'axie-infinity',
+                'gala': 'gala',
+                'chiliz': 'chiliz',
+                'flow': 'flow',
+                'internet-computer': 'internet-computer',
+                'theta-token': 'theta-token',
+                'vega-protocol': 'vega-protocol',
+                'celo': 'celo',
+                'kusama': 'kusama',
+                'eos': 'eos',
+                'tron': 'tron',
+                'bitcoin-sv': 'bitcoin-cash-sv'
             };
             
             const cryptoId = cryptoMap[fromCrypto] || fromCrypto;
             const targetCurrency = toCrypto === 'usd' ? 'usd' : cryptoMap[toCrypto] || toCrypto;
+            
+            console.log('RateRadar: Mapped crypto IDs:', { cryptoId, targetCurrency });
             
             let url;
             if (targetCurrency === 'usd') {
@@ -628,6 +841,8 @@ class RateRadar {
             } else {
                 url = `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId},${targetCurrency}&vs_currencies=usd`;
             }
+            
+            console.log('RateRadar: Fetching crypto data from:', url);
             
             const response = await fetch(url, { 
                 signal: controller.signal,
@@ -642,6 +857,7 @@ class RateRadar {
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             
             const data = await response.json();
+            console.log('RateRadar: Crypto API response:', data);
             
             if (data[cryptoId]) {
                 let rate, price, change;
@@ -662,6 +878,7 @@ class RateRadar {
                 }
                 
                 const result = { rate, price, change };
+                console.log('RateRadar: Crypto conversion result:', result);
                 
                 // Cache the result
                 this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
@@ -991,6 +1208,49 @@ class RateRadar {
         }
     }
 
+    setCryptoAlert() {
+        try {
+            const fromCryptoEl = document.getElementById('fromCrypto');
+            const toCryptoEl = document.getElementById('toCrypto');
+            
+            if (!fromCryptoEl || !toCryptoEl) {
+                console.warn('Crypto elements not found for alert');
+                return;
+            }
+            
+            const fromCrypto = fromCryptoEl.value;
+            const toCrypto = toCryptoEl.value;
+            const currentPrice = this.cryptoPrice;
+
+            if (!currentPrice) {
+                this.showError('Convert a crypto first');
+                return;
+            }
+
+            const alert = {
+                id: Date.now(),
+                fromCrypto,
+                toCrypto,
+                targetPrice: currentPrice,
+                alertType: 'below',
+                createdAt: new Date().toISOString(),
+                active: true,
+                type: 'crypto'
+            };
+
+            // Save to Chrome storage
+            chrome.storage.sync.get(['cryptoAlerts'], (result) => {
+                const alerts = result.cryptoAlerts || [];
+                alerts.push(alert);
+                chrome.storage.sync.set({ cryptoAlerts: alerts }, () => {
+                    this.showSuccess('Crypto alert set!');
+                });
+            });
+        } catch (error) {
+            console.error('Error setting crypto alert:', error);
+        }
+    }
+
     toggleFavorite() {
         try {
             const fromCurrencyEl = document.getElementById('fromCurrency');
@@ -1021,6 +1281,39 @@ class RateRadar {
             });
         } catch (error) {
             console.error('Error toggling favorite:', error);
+        }
+    }
+
+    toggleCryptoFavorite() {
+        try {
+            const fromCryptoEl = document.getElementById('fromCrypto');
+            const toCryptoEl = document.getElementById('toCrypto');
+            
+            if (!fromCryptoEl || !toCryptoEl) {
+                console.warn('Crypto elements not found for favorite');
+                return;
+            }
+            
+            const fromCrypto = fromCryptoEl.value;
+            const toCrypto = toCryptoEl.value;
+            const pair = `${fromCrypto}/${toCrypto}`;
+
+            chrome.storage.sync.get(['cryptoFavorites'], (result) => {
+                const favorites = result.cryptoFavorites || [];
+                const index = favorites.indexOf(pair);
+                
+                if (index > -1) {
+                    favorites.splice(index, 1);
+                    this.showSuccess('Removed from crypto favorites');
+                } else {
+                    favorites.push(pair);
+                    this.showSuccess('Added to crypto favorites');
+                }
+                
+                chrome.storage.sync.set({ cryptoFavorites: favorites });
+            });
+        } catch (error) {
+            console.error('Error toggling crypto favorite:', error);
         }
     }
 

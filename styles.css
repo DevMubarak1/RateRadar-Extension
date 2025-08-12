@@ -236,7 +236,55 @@ body {
 }
 
 .tab-content.active {
-    display: block;
+    display: block !important;
+}
+
+/* Ensure crypto tab content is visible when active */
+#crypto-tab.active {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Force crypto tab to be visible - highest specificity */
+body #crypto-tab.tab-content.active {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* Ensure all tab content is properly displayed when active */
+body .tab-content.active {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Debug: Show crypto tab content for troubleshooting */
+#crypto-tab {
+    min-height: 200px; /* Ensure minimum height for visibility */
+}
+
+#crypto-tab.active {
+    min-height: 200px !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Ensure crypto tab content is visible */
+#crypto-tab .liquid-glass {
+    background: rgba(255, 255, 255, 0.95) !important; /* More visible background */
+    border: 2px solid rgba(59, 130, 246, 0.3) !important; /* Visible border */
+    min-height: 300px !important; /* Ensure minimum height */
+}
+
+/* Dark theme for crypto tab */
+[data-theme="dark"] #crypto-tab .liquid-glass {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 2px solid rgba(96, 165, 250, 0.3) !important;
 }
 
 .content-card {
@@ -317,20 +365,20 @@ body {
     position: relative;
     display: inline-block;
     flex-shrink: 0;
-    width: 70px; /* Fixed width to contain the dropdown */
-    overflow: hidden; /* Prevent overflow */
+    width: 90px; /* Increased width to properly contain the dropdown */
+    overflow: hidden; /* Prevent overflow to keep within card */
 }
 
 /* Currency Select Dropdown */
 .currency-select {
-    width: 100%; /* Use full width of wrapper */
+    width: 100%;
     height: 44px;
     background: var(--input-bg);
     backdrop-filter: blur(12px);
     border: 1px solid var(--input-border);
     border-radius: 12px;
-    padding: 0 20px 0 8px; /* Reduced right padding to keep icon within bounds */
-    font-size: 12px;
+    padding: 0 20px 0 8px; /* Adjusted padding to fit within wrapper */
+    font-size: 11px; /* Slightly smaller font to fit better */
     font-weight: 600;
     color: var(--input-text);
     cursor: pointer;
@@ -340,7 +388,7 @@ body {
     -moz-appearance: none;
     position: relative;
     z-index: 1;
-    box-sizing: border-box; /* Ensure padding is included in width */
+    box-sizing: border-box;
 }
 
 .currency-select:focus {
@@ -355,10 +403,10 @@ body {
 /* Dropdown Icon */
 .dropdown-icon {
     position: absolute;
-    right: 6px; /* Reduced from 8px to keep within bounds */
+    right: 6px; /* Adjusted position to stay within wrapper */
     top: 50%;
     transform: translateY(-50%);
-    font-size: 8px;
+    font-size: 7px; /* Slightly smaller icon */
     color: var(--text-secondary);
     pointer-events: none;
     transition: all 0.2s ease;
