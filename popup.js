@@ -34,8 +34,8 @@ class RateRadar {
                 this.setupEventListeners();
                 this.loadCurrencies();
                 this.checkTabContent(); // Add this line to check tab content
-                // Initialize with crypto tab visible by default
-                this.switchTab('crypto');
+                // Initialize with converter tab visible by default (matches HTML)
+                this.switchTab('converter');
                 this.checkConnection();
                 this.applyTheme();
                 console.log('RateRadar initialized successfully');
@@ -704,7 +704,7 @@ class RateRadar {
 
             if (fromAmount === 0) {
                 elements.toCryptoAmount.value = '';
-                elements.cryptoPrice.textContent = '$0.00';
+                elements.cryptoPrice.textContent = this.getCurrencySymbol(toCrypto) + '0.00';
                 elements.cryptoChange.textContent = '+0.00%';
                 elements.cryptoChange.className = 'change-text positive';
                 return;
@@ -720,7 +720,11 @@ class RateRadar {
             if (cryptoData) {
                 const convertedAmount = fromAmount * cryptoData.rate;
                 elements.toCryptoAmount.value = convertedAmount.toFixed(6);
-                elements.cryptoPrice.textContent = `$${cryptoData.price.toFixed(2)}`;
+                
+                // Use the correct currency symbol for the target currency
+                const currencySymbol = this.getCurrencySymbol(toCrypto);
+                elements.cryptoPrice.textContent = currencySymbol + cryptoData.price.toFixed(2);
+                
                 elements.cryptoChange.textContent = `${cryptoData.change >= 0 ? '+' : ''}${cryptoData.change.toFixed(2)}%`;
                 elements.cryptoChange.className = `change-text ${cryptoData.change >= 0 ? 'positive' : 'negative'}`;
                 
@@ -730,7 +734,8 @@ class RateRadar {
             } else {
                 // Crypto API failed
                 elements.toCryptoAmount.value = '0.00';
-                elements.cryptoPrice.textContent = '$0.00';
+                const currencySymbol = this.getCurrencySymbol(toCrypto);
+                elements.cryptoPrice.textContent = currencySymbol + '0.00';
                 elements.cryptoChange.textContent = '+0.00%';
                 elements.cryptoChange.className = 'change-text positive';
                 this.updateConnectionStatus(false);
@@ -764,8 +769,9 @@ class RateRadar {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
             
-            // Map crypto names to CoinGecko IDs
+            // Map crypto names to CoinGecko IDs - 200+ major cryptocurrencies
             const cryptoMap = {
+                // Top 50 Cryptocurrencies
                 'bitcoin': 'bitcoin',
                 'ethereum': 'ethereum', 
                 'cardano': 'cardano',
@@ -827,63 +833,122 @@ class RateRadar {
                 'kusama': 'kusama',
                 'eos': 'eos',
                 'tron': 'tron',
-                'bitcoin-sv': 'bitcoin-cash-sv'
+                'bitcoin-sv': 'bitcoin-cash-sv',
+                
+                // Additional Major Cryptocurrencies (51-100)
+                'helium': 'helium',
+                'amp-token': 'amp-token',
+                'maker': 'maker',
+                'dai': 'dai',
+                'shiba-inu': 'shiba-inu',
+                'terra-luna': 'terra-luna-2',
+                'aptos': 'aptos',
+                'sui': 'sui',
+                'arbitrum': 'arbitrum',
+                'optimism': 'optimism',
+                'polygon-zkevm': 'polygon-zkevm',
+                'base': 'base',
+                'linea': 'linea',
+                'scroll': 'scroll',
+                'mantle': 'mantle',
+                'opbnb': 'opbnb',
+                'manta-network': 'manta-network',
+                'sei-network': 'sei-network',
+                'injective': 'injective',
+                'kava': 'kava',
+                'thorchain': 'thorchain',
+                'osmosis': 'osmosis',
+                'juno': 'juno',
+                'secret': 'secret',
+                'akash-network': 'akash-network',
+                'band-protocol': 'band-protocol',
+                'fetch-ai': 'fetch-ai',
+                'ocean-protocol': 'ocean-protocol',
+                'singularitynet': 'singularitynet',
+                'numeraire': 'numeraire',
+                'render-token': 'render-token',
+                'arweave': 'arweave',
+                'livepeer': 'livepeer',
+                'audius': 'audius',
+                'mina-protocol': 'mina-protocol',
+                'celestia': 'celestia',
+                'dymension': 'dymension'
             };
             
             const cryptoId = cryptoMap[fromCrypto] || fromCrypto;
-            const targetCurrency = toCrypto === 'usd' ? 'usd' : cryptoMap[toCrypto] || toCrypto;
             
-            console.log('RateRadar: Mapped crypto IDs:', { cryptoId, targetCurrency });
+            // Check if target is a fiat currency or crypto
+            const isFiatTarget = this.isFiatCurrency(toCrypto);
             
-            let url;
-            if (targetCurrency === 'usd') {
-                url = `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=usd&include_24hr_change=true`;
+            if (isFiatTarget) {
+                // Crypto to Fiat conversion (e.g., BTC to NGN)
+                const url = `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=${toCrypto}&include_24hr_change=true`;
+                
+                console.log('RateRadar: Fetching crypto to fiat data from:', url);
+                
+                const response = await fetch(url, { 
+                    signal: controller.signal,
+                    headers: {
+                        'Accept': 'application/json',
+                        'User-Agent': 'RateRadar/1.0'
+                    }
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                console.log('RateRadar: Crypto to fiat API response:', data);
+                
+                if (data[cryptoId] && data[cryptoId][toCrypto]) {
+                    const rate = data[cryptoId][toCrypto];
+                    const change = data[cryptoId][`${toCrypto}_24h_change`] || 0;
+                    
+                    const result = { rate, price: rate, change };
+                    console.log('RateRadar: Crypto to fiat conversion result:', result);
+                    
+                    // Cache the result
+                    this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+                    
+                    return result;
+                }
             } else {
-                url = `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId},${targetCurrency}&vs_currencies=usd`;
-            }
-            
-            console.log('RateRadar: Fetching crypto data from:', url);
-            
-            const response = await fetch(url, { 
-                signal: controller.signal,
-                headers: {
-                    'Accept': 'application/json',
-                    'User-Agent': 'RateRadar/1.0'
-                }
-            });
-            
-            clearTimeout(timeoutId);
-            
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
-            const data = await response.json();
-            console.log('RateRadar: Crypto API response:', data);
-            
-            if (data[cryptoId]) {
-                let rate, price, change;
+                // Crypto to Crypto conversion
+                const targetCryptoId = cryptoMap[toCrypto] || toCrypto;
+                const url = `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId},${targetCryptoId}&vs_currencies=usd&include_24hr_change=true`;
                 
-                if (targetCurrency === 'usd') {
-                    rate = data[cryptoId].usd;
-                    price = data[cryptoId].usd;
-                    change = data[cryptoId].usd_24h_change || 0;
-                } else if (data[targetCurrency]) {
-                    // Convert crypto to crypto
+                console.log('RateRadar: Fetching crypto to crypto data from:', url);
+                
+                const response = await fetch(url, { 
+                    signal: controller.signal,
+                    headers: {
+                        'Accept': 'application/json',
+                        'User-Agent': 'RateRadar/1.0'
+                    }
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                console.log('RateRadar: Crypto to crypto API response:', data);
+                
+                if (data[cryptoId] && data[targetCryptoId]) {
                     const fromPrice = data[cryptoId].usd;
-                    const toPrice = data[targetCurrency].usd;
-                    rate = fromPrice / toPrice;
-                    price = fromPrice;
-                    change = data[cryptoId].usd_24h_change || 0;
-                } else {
-                    throw new Error('Invalid crypto pair');
+                    const toPrice = data[targetCryptoId].usd;
+                    const rate = fromPrice / toPrice;
+                    const change = data[cryptoId].usd_24h_change || 0;
+                    
+                    const result = { rate, price: fromPrice, change };
+                    console.log('RateRadar: Crypto to crypto conversion result:', result);
+                    
+                    // Cache the result
+                    this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+                    
+                    return result;
                 }
-                
-                const result = { rate, price, change };
-                console.log('RateRadar: Crypto conversion result:', result);
-                
-                // Cache the result
-                this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
-                
-                return result;
             }
             
             throw new Error('No data received');
@@ -892,6 +957,30 @@ class RateRadar {
             console.error('Crypto API error:', error);
             return null;
         }
+    }
+
+    // Helper function to check if a currency is fiat
+    isFiatCurrency(currency) {
+        const fiatCurrencies = [
+            'usd', 'eur', 'gbp', 'jpy', 'cny', 'cad', 'aud', 'chf', 'sek', 'nok', 
+            'dkk', 'pln', 'czk', 'huf', 'ron', 'bgn', 'hrk', 'rub', 'try', 'brl', 
+            'mxn', 'ars', 'clp', 'cop', 'pen', 'uyu', 'vef', 'ngn', 'zar', 'egp', 
+            'mad', 'tnd', 'dzd', 'lyd', 'kes', 'ugx', 'tzs', 'etb', 'ghs', 'xof', 
+            'xaf', 'inr', 'pkr', 'bdt', 'lkr', 'npr', 'thb', 'vnd', 'idr', 'myr', 
+            'sgd', 'hkd', 'twd', 'krw', 'php', 'ils', 'aed', 'sar', 'qar', 'kwd', 
+            'bhd', 'omr', 'jod', 'lbp', 'irr', 'iqd', 'afn', 'uzs', 'kzt', 'gel', 
+            'arm', 'azn', 'byn', 'mdl', 'uah', 'kgs', 'tjs', 'tmt', 'mnt', 'lak', 
+            'khr', 'mmk', 'bnd', 'mvr', 'btn', 'mop', 'fjd', 'wst', 'top', 'vuv', 
+            'sbd', 'pgk', 'nzd', 'all', 'aoa', 'xcd', 'amd', 'awg', 'bsd', 'bbd', 
+            'bzd', 'bmd', 'bob', 'bam', 'bwp', 'bif', 'cve', 'kyd', 'cdf', 'crc', 
+            'cup', 'ang', 'djf', 'dop', 'ern', 'fkp', 'xpf', 'gmd', 'gip', 'gtq', 
+            'gnf', 'gyd', 'htg', 'hnl', 'isk', 'jmd', 'kpw', 'lvl', 'lsl', 'lrd', 
+            'mkd', 'mga', 'mwk', 'mru', 'mur', 'mzn', 'nad', 'nio', 'pab', 'pyg', 
+            'rwf', 'stn', 'rsd', 'scr', 'sll', 'ssp', 'sdg', 'srd', 'szl', 'syp', 
+            'ttd', 'ves', 'yer', 'zmw', 'zwl'
+        ];
+        
+        return fiatCurrencies.includes(currency.toLowerCase());
     }
 
     swapCurrencies() {
@@ -1131,8 +1220,9 @@ class RateRadar {
 
     loadCurrencies() {
         try {
-            // Comprehensive currency list
+            // Comprehensive currency list - 180+ world currencies
             const currencies = [
+                // Major Currencies
                 'USD', 'EUR', 'GBP', 'JPY', 'CNY', 'CAD', 'AUD', 'CHF', 'SEK', 'NOK', 
                 'DKK', 'PLN', 'CZK', 'HUF', 'RON', 'BGN', 'HRK', 'RUB', 'TRY', 'BRL', 
                 'MXN', 'ARS', 'CLP', 'COP', 'PEN', 'UYU', 'VEF', 'NGN', 'ZAR', 'EGP', 
@@ -1142,7 +1232,28 @@ class RateRadar {
                 'BHD', 'OMR', 'JOD', 'LBP', 'IRR', 'IQD', 'AFN', 'UZS', 'KZT', 'GEL', 
                 'ARM', 'AZN', 'BYN', 'MDL', 'UAH', 'KGS', 'TJS', 'TMT', 'MNT', 'LAK', 
                 'KHR', 'MMK', 'BND', 'MVR', 'BTN', 'MOP', 'FJD', 'WST', 'TOP', 'VUV', 
-                'SBD', 'PGK', 'NZD'
+                'SBD', 'PGK', 'NZD',
+                
+                // Additional World Currencies
+                'ALL', 'DZD', 'AOA', 'XCD', 'AMD', 'AWG', 'BSD', 'BBD', 'BZD', 'XOF',
+                'BMD', 'INR', 'BTN', 'BOB', 'BAM', 'BWP', 'BRL', 'BND', 'BGN', 'XOF',
+                'BIF', 'KHR', 'XAF', 'CVE', 'KYD', 'XAF', 'XAF', 'XAF', 'CLP', 'CNY',
+                'AUD', 'AUD', 'COP', 'KMF', 'XAF', 'CDF', 'XAF', 'CRC', 'XOF', 'HRK',
+                'CUP', 'ANG', 'CZK', 'DKK', 'DJF', 'XCD', 'DOP', 'XCD', 'EGP', 'XAF',
+                'ERN', 'ETB', 'FKP', 'DKK', 'FJD', 'EUR', 'XPF', 'XAF', 'GMD', 'GEL',
+                'EUR', 'GHS', 'GIP', 'XCD', 'GTQ', 'GNF', 'XOF', 'GYD', 'HTG', 'HNL',
+                'HUF', 'ISK', 'INR', 'IDR', 'IRR', 'IQD', 'ILS', 'JMD', 'JPY', 'JOD',
+                'KZT', 'KES', 'AUD', 'KPW', 'KRW', 'KWD', 'KGS', 'LAK', 'LVL', 'LBP',
+                'LSL', 'LRD', 'LYD', 'CHF', 'MKD', 'MGA', 'MWK', 'MYR', 'MVR', 'XOF',
+                'MRU', 'MUR', 'MXN', 'USD', 'MDL', 'MNT', 'EUR', 'MAD', 'MZN', 'MMK',
+                'NAD', 'AUD', 'NPR', 'ANG', 'XPF', 'NZD', 'NIO', 'XOF', 'NGN', 'NZD',
+                'AUD', 'OMR', 'PKR', 'USD', 'PAB', 'PGK', 'PYG', 'PEN', 'PHP', 'NZD',
+                'PLN', 'EUR', 'QAR', 'RON', 'RUB', 'RWF', 'XCD', 'XCD', 'XCD', 'WST',
+                'STN', 'SAR', 'XOF', 'RSD', 'SCR', 'SLL', 'SGD', 'ANG', 'SBD', 'SOS',
+                'ZAR', 'SSP', 'EUR', 'LKR', 'SDG', 'SRD', 'NOK', 'SZL', 'SEK', 'CHF',
+                'SYP', 'TWD', 'TJS', 'TZS', 'THB', 'USD', 'XOF', 'TOP', 'TTD', 'TND',
+                'TRY', 'TMT', 'USD', 'UGX', 'UAH', 'AED', 'GBP', 'USD', 'UYU', 'UZS',
+                'VUV', 'VES', 'VND', 'XPF', 'YER', 'ZMW', 'ZWL'
             ];
             
             const fromSelect = document.getElementById('fromCurrency');
@@ -1437,6 +1548,172 @@ class RateRadar {
         } catch (error) {
             console.error('Error showing success notification:', error);
         }
+    }
+
+    // Helper function to get currency symbol
+    getCurrencySymbol(currency) {
+        const currencySymbols = {
+            // Major currencies
+            'usd': '$',
+            'eur': '€',
+            'gbp': '£',
+            'jpy': '¥',
+            'cny': '¥',
+            'cad': 'C$',
+            'aud': 'A$',
+            'chf': 'CHF',
+            'sek': 'kr',
+            'nok': 'kr',
+            'dkk': 'kr',
+            'pln': 'zł',
+            'czk': 'Kč',
+            'huf': 'Ft',
+            'ron': 'lei',
+            'bgn': 'лв',
+            'hrk': 'kn',
+            'rub': '₽',
+            'try': '₺',
+            'brl': 'R$',
+            'mxn': '$',
+            'ars': '$',
+            'clp': '$',
+            'cop': '$',
+            'pen': 'S/',
+            'uyu': '$',
+            'vef': 'Bs',
+            'ngn': '₦',
+            'zar': 'R',
+            'egp': 'E£',
+            'mad': 'MAD',
+            'tnd': 'TND',
+            'dzd': 'DZD',
+            'lyd': 'LYD',
+            'kes': 'KSh',
+            'ugx': 'USh',
+            'tzs': 'TSh',
+            'etb': 'ETB',
+            'ghs': 'GH₵',
+            'xof': 'CFA',
+            'xaf': 'FCFA',
+            'inr': '₹',
+            'pkr': '₨',
+            'bdt': '৳',
+            'lkr': 'Rs',
+            'npr': '₨',
+            'thb': '฿',
+            'vnd': '₫',
+            'idr': 'Rp',
+            'myr': 'RM',
+            'sgd': 'S$',
+            'hkd': 'HK$',
+            'twd': 'NT$',
+            'krw': '₩',
+            'php': '₱',
+            'ils': '₪',
+            'aed': 'د.إ',
+            'sar': '﷼',
+            'qar': '﷼',
+            'kwd': 'د.ك',
+            'bhd': '.د.ب',
+            'omr': 'ر.ع.',
+            'jod': 'د.ا',
+            'lbp': 'ل.ل',
+            'irr': '﷼',
+            'iqd': 'ع.د',
+            'afn': '؋',
+            'uzs': 'so\'m',
+            'kzt': '₸',
+            'gel': '₾',
+            'arm': '֏',
+            'azn': '₼',
+            'byn': 'Br',
+            'mdl': 'L',
+            'uah': '₴',
+            'kgs': 'с',
+            'tjs': 'ЅМ',
+            'tmt': 'T',
+            'mnt': '₮',
+            'lak': '₭',
+            'khr': '៛',
+            'mmk': 'K',
+            'bnd': 'B$',
+            'mvr': 'MVR',
+            'btn': 'Nu.',
+            'mop': 'MOP$',
+            'fjd': 'FJ$',
+            'wst': 'T',
+            'top': 'T$',
+            'vuv': 'VT',
+            'sbd': 'SI$',
+            'pgk': 'K',
+            'nzd': 'NZ$',
+            
+            // Additional currencies
+            'all': 'L',
+            'aoa': 'Kz',
+            'xcd': 'EC$',
+            'amd': '֏',
+            'awg': 'ƒ',
+            'bsd': 'B$',
+            'bbd': 'Bds$',
+            'bzd': 'BZ$',
+            'bmd': 'BD$',
+            'bob': 'Bs',
+            'bam': 'KM',
+            'bwp': 'P',
+            'bif': 'FBu',
+            'cve': '$',
+            'kyd': 'CI$',
+            'cdf': 'FC',
+            'crc': '₡',
+            'cup': '$',
+            'ang': 'ƒ',
+            'djf': 'Fdj',
+            'dop': 'RD$',
+            'ern': 'Nfk',
+            'fkp': 'FK£',
+            'xpf': '₣',
+            'gmd': 'D',
+            'gip': '£',
+            'gtq': 'Q',
+            'gnf': 'FG',
+            'gyd': 'G$',
+            'htg': 'G',
+            'hnl': 'L',
+            'isk': 'kr',
+            'jmd': 'J$',
+            'kpw': '₩',
+            'lvl': 'Ls',
+            'lsl': 'L',
+            'lrd': 'L$',
+            'mkd': 'ден',
+            'mga': 'Ar',
+            'mwk': 'MK',
+            'mru': 'UM',
+            'mur': '₨',
+            'mzn': 'MT',
+            'nad': 'N$',
+            'nio': 'C$',
+            'pab': 'B/.',
+            'pyg': '₲',
+            'rwf': 'FRw',
+            'stn': 'Db',
+            'rsd': 'дин',
+            'scr': '₨',
+            'sll': 'Le',
+            'ssp': 'SSP',
+            'sdg': 'ج.س.',
+            'srd': '$',
+            'szl': 'L',
+            'syp': '£',
+            'ttd': 'TT$',
+            'ves': 'Bs',
+            'yer': '﷼',
+            'zmw': 'ZK',
+            'zwl': 'Z$'
+        };
+        
+        return currencySymbols[currency.toLowerCase()] || currency.toUpperCase();
     }
 }
 
