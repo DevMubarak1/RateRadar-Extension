@@ -1,10 +1,10 @@
 // RateRadar Content Script - Enhanced Smart Shopping
 // Only activates on highlight and excludes GitHub-like sites
 
-    class RateRadarContent {
-        constructor() {
-            this.isEnabled = false;
-            this.userCurrency = 'USD';
+class RateRadarContent {
+    constructor() {
+        this.isEnabled = false;
+        this.userCurrency = 'USD';
         this.baseCurrency = 'USD';
         this.excludedSites = [
             'github.com', 'gitlab.com', 'bitbucket.org', 'stackoverflow.com',
@@ -12,37 +12,37 @@
             'code.visualstudio.com', 'atom.io', 'sublimetext.com'
         ];
         this.priceOverlay = null;
-                this.init();
-        }
+        this.init();
+    }
 
-        async init() {
-            try {
+    async init() {
+        try {
             // Check if we're on an excluded site
             if (this.isExcludedSite()) {
                 console.log('RateRadar: Excluded site detected, skipping initialization');
-                    return;
-                }
-                
+                return;
+            }
+
             // Load settings
-                await this.loadSettings();
-                
+            await this.loadSettings();
+            
             // Only initialize if smart shopping is enabled
-                if (this.isEnabled) {
+            if (this.isEnabled) {
                 this.setupHighlightListener();
                 console.log('RateRadar: Smart shopping enabled for highlight-based conversion');
             }
-            } catch (error) {
-                console.log('RateRadar: Error during initialization:', error);
-            }
+        } catch (error) {
+            console.log('RateRadar: Error during initialization:', error);
         }
+    }
 
     isExcludedSite() {
         const hostname = window.location.hostname.toLowerCase();
         return this.excludedSites.some(site => hostname.includes(site));
-        }
+    }
 
-        async loadSettings() {
-            try {
+    async loadSettings() {
+        try {
             const result = await chrome.storage.sync.get([
                 'smartShopping',
                 'baseCurrency',
@@ -52,7 +52,7 @@
             this.isEnabled = result.smartShopping || false;
             this.baseCurrency = result.baseCurrency || 'USD';
             this.userCurrency = result.userCurrency || 'USD';
-            } catch (error) {
+        } catch (error) {
             console.log('RateRadar: Error loading settings:', error);
         }
     }
@@ -80,7 +80,7 @@
 
     isPriceText(text) {
         // Enhanced price detection patterns
-            const pricePatterns = [
+        const pricePatterns = [
             /^\$[\d,]+\.?\d*$/,           // $123.45
             /^[\d,]+\.?\d*\s*\$/,         // 123.45$
             /^€[\d,]+\.?\d*$/,            // €123.45
@@ -134,7 +134,7 @@
         const cleanText = priceText.replace(/,/g, '');
         
         // Currency symbols mapping
-            const currencyMap = {
+        const currencyMap = {
             '$': 'USD', '€': 'EUR', '£': 'GBP', '¥': 'JPY', '₦': 'NGN',
             '₹': 'INR', '₩': 'KRW', '₽': 'RUB', '₺': 'TRY', '₴': 'UAH',
             '₿': 'BTC', 'Ξ': 'ETH', '₳': 'ADA', '◎': 'SOL', 'Ł': 'LTC',
@@ -174,9 +174,9 @@
         }
         
         return { currency: null, amount: null };
-        }
+    }
 
-        async convertPrice(fromCurrency, toCurrency, amount) {
+    async convertPrice(fromCurrency, toCurrency, amount) {
         try {
             const exchangeAPIs = [
                 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies',
@@ -237,7 +237,7 @@
                     continue;
                 }
             }
-
+            
             return null;
         } catch (error) {
             console.log('RateRadar: Error converting price:', error);
@@ -257,9 +257,9 @@
                 <div class="rateradar-original">${originalPrice}</div>
                 <div class="rateradar-converted">≈ ${this.formatPrice(convertedPrice, this.userCurrency)}</div>
                 <div class="rateradar-info">RateRadar Conversion</div>
-                </div>
-            `;
-
+            </div>
+        `;
+        
         // Position overlay near the selection
         const rect = event.target.getBoundingClientRect();
         this.priceOverlay.style.position = 'fixed';
