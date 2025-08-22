@@ -38,6 +38,18 @@
                 <span class="tab-icon">🪙</span>
                 <span class="tab-label">CRYPTO</span>
             </button>
+            <button class="tab-button" data-tab="alerts" title="Rate Alerts">
+                <span class="tab-icon">🔔</span>
+                <span class="tab-label">ALERTS</span>
+            </button>
+            <button class="tab-button" data-tab="favorites" title="Favorite Pairs">
+                <span class="tab-icon">⭐</span>
+                <span class="tab-label">FAVORITES</span>
+            </button>
+            <button class="tab-button" data-tab="history" title="Historical Data">
+                <span class="tab-icon">📊</span>
+                <span class="tab-label">HISTORY</span>
+            </button>
         </div>
     </div>
 
@@ -546,6 +558,56 @@
                 </div>
             </div>
         </div>
+
+        <!-- Alerts Tab -->
+        <div id="alerts-tab" class="tab-content">
+            <div class="liquid-glass content-card">
+                <div class="alerts-header">
+                    <h3>Rate Alerts</h3>
+                    <button id="addAlertBtn" class="action-button primary">➕ Add Alert</button>
+                </div>
+                
+                <div id="alertsList" class="alerts-list">
+                    <!-- Alerts will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Favorites Tab -->
+        <div id="favorites-tab" class="tab-content">
+            <div class="liquid-glass content-card">
+                <div class="favorites-header">
+                    <h3>Favorite Pairs</h3>
+                </div>
+                
+                <div id="favoritesList" class="favorites-list">
+                    <!-- Favorites will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history-tab" class="tab-content">
+            <div class="liquid-glass content-card">
+                <div class="history-header">
+                    <h3>Historical Data</h3>
+                    <div class="history-controls">
+                        <select id="historyType" class="form-select">
+                            <option value="currency">Currency</option>
+                            <option value="crypto">Crypto</option>
+                        </select>
+                        <select id="historyDays" class="form-select">
+                            <option value="7">7 Days</option>
+                            <option value="14">14 Days</option>
+                            <option value="30" selected>30 Days</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="historyList" class="history-list">
+                    <!-- History will be populated here -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Status Bar -->
@@ -561,6 +623,51 @@
         <div class="loading-content">
             <div class="loading-spinner"></div>
             <span class="loading-text">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="alertModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Set Rate Alert</h3>
+                <button id="closeAlertModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="alert-form">
+                    <div class="form-group">
+                        <label>From Currency:</label>
+                        <select id="alertFromCurrency" class="form-select">
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>To Currency:</label>
+                        <select id="alertToCurrency" class="form-select">
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Rate:</label>
+                        <input type="number" id="alertTargetRate" class="form-input" placeholder="0.00" step="0.0001">
+                    </div>
+                    <div class="form-group">
+                        <label>Condition:</label>
+                        <select id="alertCondition" class="form-select">
+                            <option value="above">Above</option>
+                            <option value="below">Below</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Description (Optional):</label>
+                        <input type="text" id="alertDescription" class="form-input" placeholder="e.g., BTC to $200,000">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveAlertBtn" class="action-button primary">Save Alert</button>
+                <button id="cancelAlertBtn" class="action-button secondary">Cancel</button>
+            </div>
         </div>
     </div>
 
