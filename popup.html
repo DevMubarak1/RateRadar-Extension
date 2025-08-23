@@ -8,18 +8,16 @@
 </head>
 <body>
     <!-- Header Section -->
-    <div class="liquid-glass header-section">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <div class="logo-container">
-                    <img src="icons/icon.png" alt="RateRadar" class="logo-icon">
-                </div>
-                <div>
-                    <h1 class="app-title">RateRadar</h1>
-                    <p class="app-subtitle">Currency & Crypto</p>
-                </div>
+    <div class="header-section">
+        <div class="header-content">
+            <div class="logo-container">
+                <img src="icons/icon.png" alt="RateRadar" class="logo-icon">
             </div>
-            <button id="settingsBtn" class="icon-button" title="Settings">
+            <div class="header-text">
+                <h1 class="app-title">RateRadar</h1>
+                <p class="app-subtitle">Currency & Crypto Tracker</p>
+            </div>
+            <button id="settingsBtn" class="settings-button" title="Settings">
                 <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                 </svg>
@@ -28,7 +26,7 @@
     </div>
 
     <!-- Tabs Section -->
-    <div class="liquid-glass tabs-section">
+    <div class="tabs-section">
         <div class="tabs-container">
             <button class="tab-button active" data-tab="converter" title="Currency Converter">
                 <span class="tab-icon">💱</span>
@@ -57,107 +55,107 @@
     <div class="content-area">
         <!-- Currency Converter Tab -->
         <div id="converter-tab" class="tab-content active">
-            <div class="liquid-glass content-card">
+            <div class="content-card">
                 <!-- From Section -->
                 <div class="input-section">
                     <label class="input-label">FROM</label>
                     <div class="input-group">
-                        <input type="number" id="fromAmount" class="amount-input" placeholder="0.00" value="100">
+                        <input type="text" id="fromAmount" class="amount-input" placeholder="0.00" value="100">
                         <div class="currency-select-wrapper">
-                            <select id="fromCurrency" class="currency-select">
-                                <option value="USD">USD</option>
-                                <option value="EUR">EUR</option>
-                                <option value="GBP">GBP</option>
-                                <option value="JPY">JPY</option>
-                                <option value="CNY">CNY</option>
-                                <option value="CAD">CAD</option>
-                                <option value="AUD">AUD</option>
-                                <option value="CHF">CHF</option>
-                                <option value="SEK">SEK</option>
-                                <option value="NOK">NOK</option>
-                                <option value="DKK">DKK</option>
-                                <option value="PLN">PLN</option>
-                                <option value="CZK">CZK</option>
-                                <option value="HUF">HUF</option>
-                                <option value="RON">RON</option>
-                                <option value="BGN">BGN</option>
-                                <option value="HRK">HRK</option>
-                                <option value="RUB">RUB</option>
-                                <option value="TRY">TRY</option>
-                                <option value="BRL">BRL</option>
-                                <option value="MXN">MXN</option>
-                                <option value="ARS">ARS</option>
-                                <option value="CLP">CLP</option>
-                                <option value="COP">COP</option>
-                                <option value="PEN">PEN</option>
-                                <option value="UYU">UYU</option>
-                                <option value="VEF">VEF</option>
-                                <option value="NGN">NGN</option>
-                                <option value="ZAR">ZAR</option>
-                                <option value="EGP">EGP</option>
-                                <option value="MAD">MAD</option>
-                                <option value="TND">TND</option>
-                                <option value="DZD">DZD</option>
-                                <option value="LYD">LYD</option>
-                                <option value="KES">KES</option>
-                                <option value="UGX">UGX</option>
-                                <option value="TZS">TZS</option>
-                                <option value="ETB">ETB</option>
-                                <option value="GHS">GHS</option>
-                                <option value="XOF">XOF</option>
-                                <option value="XAF">XAF</option>
-                                <option value="INR">INR</option>
-                                <option value="PKR">PKR</option>
-                                <option value="BDT">BDT</option>
-                                <option value="LKR">LKR</option>
-                                <option value="NPR">NPR</option>
-                                <option value="THB">THB</option>
-                                <option value="VND">VND</option>
-                                <option value="IDR">IDR</option>
-                                <option value="MYR">MYR</option>
-                                <option value="SGD">SGD</option>
-                                <option value="HKD">HKD</option>
-                                <option value="TWD">TWD</option>
-                                <option value="KRW">KRW</option>
-                                <option value="PHP">PHP</option>
-                                <option value="ILS">ILS</option>
-                                <option value="AED">AED</option>
-                                <option value="SAR">SAR</option>
-                                <option value="QAR">QAR</option>
-                                <option value="KWD">KWD</option>
-                                <option value="BHD">BHD</option>
-                                <option value="OMR">OMR</option>
-                                <option value="JOD">JOD</option>
-                                <option value="LBP">LBP</option>
-                                <option value="IRR">IRR</option>
-                                <option value="IQD">IQD</option>
-                                <option value="AFN">AFN</option>
-                                <option value="UZS">UZS</option>
-                                <option value="KZT">KZT</option>
-                                <option value="GEL">GEL</option>
-                                <option value="ARM">ARM</option>
-                                <option value="AZN">AZN</option>
-                                <option value="BYN">BYN</option>
-                                <option value="MDL">MDL</option>
-                                <option value="UAH">UAH</option>
-                                <option value="KGS">KGS</option>
-                                <option value="TJS">TJS</option>
-                                <option value="TMT">TMT</option>
-                                <option value="MNT">MNT</option>
-                                <option value="LAK">LAK</option>
-                                <option value="KHR">KHR</option>
-                                <option value="MMK">MMK</option>
-                                <option value="BND">BND</option>
-                                <option value="MVR">MVR</option>
-                                <option value="BTN">BTN</option>
-                                <option value="MOP">MOP</option>
-                                <option value="FJD">FJD</option>
-                                <option value="WST">WST</option>
-                                <option value="TOP">TOP</option>
-                                <option value="VUV">VUV</option>
-                                <option value="SBD">SBD</option>
-                                <option value="PGK">PGK</option>
-                                <option value="NZD">NZD</option>
+                            <select id="fromCurrency" class="currency-select" data-searchable="true">
+                                <option value="USD">USD - US Dollar</option>
+                                <option value="EUR">EUR - Euro</option>
+                                <option value="GBP">GBP - British Pound</option>
+                                <option value="JPY">JPY - Japanese Yen</option>
+                                <option value="CNY">CNY - Chinese Yuan</option>
+                                <option value="CAD">CAD - Canadian Dollar</option>
+                                <option value="AUD">AUD - Australian Dollar</option>
+                                <option value="CHF">CHF - Swiss Franc</option>
+                                <option value="SEK">SEK - Swedish Krona</option>
+                                <option value="NOK">NOK - Norwegian Krone</option>
+                                <option value="DKK">DKK - Danish Krone</option>
+                                <option value="PLN">PLN - Polish Złoty</option>
+                                <option value="CZK">CZK - Czech Koruna</option>
+                                <option value="HUF">HUF - Hungarian Forint</option>
+                                <option value="RON">RON - Romanian Leu</option>
+                                <option value="BGN">BGN - Bulgarian Lev</option>
+                                <option value="HRK">HRK - Croatian Kuna</option>
+                                <option value="RUB">RUB - Russian Ruble</option>
+                                <option value="TRY">TRY - Turkish Lira</option>
+                                <option value="BRL">BRL - Brazilian Real</option>
+                                <option value="MXN">MXN - Mexican Peso</option>
+                                <option value="ARS">ARS - Argentine Peso</option>
+                                <option value="CLP">CLP - Chilean Peso</option>
+                                <option value="COP">COP - Colombian Peso</option>
+                                <option value="PEN">PEN - Peruvian Sol</option>
+                                <option value="UYU">UYU - Uruguayan Peso</option>
+                                <option value="VEF">VEF - Venezuelan Bolívar</option>
+                                <option value="NGN">NGN - Nigerian Naira</option>
+                                <option value="ZAR">ZAR - South African Rand</option>
+                                <option value="EGP">EGP - Egyptian Pound</option>
+                                <option value="MAD">MAD - Moroccan Dirham</option>
+                                <option value="TND">TND - Tunisian Dinar</option>
+                                <option value="DZD">DZD - Algerian Dinar</option>
+                                <option value="LYD">LYD - Libyan Dinar</option>
+                                <option value="KES">KES - Kenyan Shilling</option>
+                                <option value="UGX">UGX - Ugandan Shilling</option>
+                                <option value="TZS">TZS - Tanzanian Shilling</option>
+                                <option value="ETB">ETB - Ethiopian Birr</option>
+                                <option value="GHS">GHS - Ghanaian Cedi</option>
+                                <option value="XOF">XOF - West African CFA Franc</option>
+                                <option value="XAF">XAF - Central African CFA Franc</option>
+                                <option value="INR">INR - Indian Rupee</option>
+                                <option value="PKR">PKR - Pakistani Rupee</option>
+                                <option value="BDT">BDT - Bangladeshi Taka</option>
+                                <option value="LKR">LKR - Sri Lankan Rupee</option>
+                                <option value="NPR">NPR - Nepalese Rupee</option>
+                                <option value="THB">THB - Thai Baht</option>
+                                <option value="VND">VND - Vietnamese Dong</option>
+                                <option value="IDR">IDR - Indonesian Rupiah</option>
+                                <option value="MYR">MYR - Malaysian Ringgit</option>
+                                <option value="SGD">SGD - Singapore Dollar</option>
+                                <option value="HKD">HKD - Hong Kong Dollar</option>
+                                <option value="TWD">TWD - Taiwan Dollar</option>
+                                <option value="KRW">KRW - South Korean Won</option>
+                                <option value="PHP">PHP - Philippine Peso</option>
+                                <option value="ILS">ILS - Israeli Shekel</option>
+                                <option value="AED">AED - UAE Dirham</option>
+                                <option value="SAR">SAR - Saudi Riyal</option>
+                                <option value="QAR">QAR - Qatari Riyal</option>
+                                <option value="KWD">KWD - Kuwaiti Dinar</option>
+                                <option value="BHD">BHD - Bahraini Dinar</option>
+                                <option value="OMR">OMR - Omani Rial</option>
+                                <option value="JOD">JOD - Jordanian Dinar</option>
+                                <option value="LBP">LBP - Lebanese Pound</option>
+                                <option value="IRR">IRR - Iranian Rial</option>
+                                <option value="IQD">IQD - Iraqi Dinar</option>
+                                <option value="AFN">AFN - Afghan Afghani</option>
+                                <option value="UZS">UZS - Uzbekistani Som</option>
+                                <option value="KZT">KZT - Kazakhstani Tenge</option>
+                                <option value="GEL">GEL - Georgian Lari</option>
+                                <option value="ARM">ARM - Armenian Dram</option>
+                                <option value="AZN">AZN - Azerbaijani Manat</option>
+                                <option value="BYN">BYN - Belarusian Ruble</option>
+                                <option value="MDL">MDL - Moldovan Leu</option>
+                                <option value="UAH">UAH - Ukrainian Hryvnia</option>
+                                <option value="KGS">KGS - Kyrgyzstani Som</option>
+                                <option value="TJS">TJS - Tajikistani Somoni</option>
+                                <option value="TMT">TMT - Turkmenistani Manat</option>
+                                <option value="MNT">MNT - Mongolian Tögrög</option>
+                                <option value="LAK">LAK - Lao Kip</option>
+                                <option value="KHR">KHR - Cambodian Riel</option>
+                                <option value="MMK">MMK - Myanmar Kyat</option>
+                                <option value="BND">BND - Brunei Dollar</option>
+                                <option value="MVR">MVR - Maldivian Rufiyaa</option>
+                                <option value="BTN">BTN - Bhutanese Ngultrum</option>
+                                <option value="MOP">MOP - Macanese Pataca</option>
+                                <option value="FJD">FJD - Fijian Dollar</option>
+                                <option value="WST">WST - Samoan Tālā</option>
+                                <option value="TOP">TOP - Tongan Paʻanga</option>
+                                <option value="VUV">VUV - Vanuatu Vatu</option>
+                                <option value="SBD">SBD - Solomon Islands Dollar</option>
+                                <option value="PGK">PGK - Papua New Guinean Kina</option>
+                                <option value="NZD">NZD - New Zealand Dollar</option>
                             </select>
                             <span class="dropdown-icon">▼</span>
                         </div>
@@ -299,76 +297,76 @@
 
         <!-- Crypto Tab -->
         <div id="crypto-tab" class="tab-content">
-            <div class="liquid-glass content-card">
+            <div class="content-card">
                 <!-- From Crypto -->
                 <div class="input-section">
                     <label class="input-label">FROM</label>
                     <div class="input-group">
-                        <input type="number" id="fromCryptoAmount" placeholder="0.00" class="amount-input" step="0.000001" value="1">
+                        <input type="text" id="fromCryptoAmount" placeholder="0.00" class="amount-input" value="1">
                         <div class="currency-select-wrapper">
-                            <select id="fromCrypto" class="currency-select">
-                                <option value="bitcoin">BTC</option>
-                                <option value="ethereum">ETH</option>
-                                <option value="cardano">ADA</option>
-                                <option value="solana">SOL</option>
-                                <option value="binancecoin">BNB</option>
-                                <option value="ripple">XRP</option>
-                                <option value="polkadot">DOT</option>
-                                <option value="dogecoin">DOGE</option>
-                                <option value="avalanche-2">AVAX</option>
-                                <option value="polygon">MATIC</option>
-                                <option value="chainlink">LINK</option>
-                                <option value="uniswap">UNI</option>
-                                <option value="litecoin">LTC</option>
-                                <option value="bitcoin-cash">BCH</option>
-                                <option value="stellar">XLM</option>
-                                <option value="vechain">VET</option>
-                                <option value="filecoin">FIL</option>
-                                <option value="cosmos">ATOM</option>
-                                <option value="monero">XMR</option>
-                                <option value="algorand">ALGO</option>
-                                <option value="tezos">XTZ</option>
-                                <option value="aave">AAVE</option>
-                                <option value="compound">COMP</option>
-                                <option value="sushi">SUSHI</option>
-                                <option value="pancakeswap-token">CAKE</option>
-                                <option value="curve-dao-token">CRV</option>
-                                <option value="yearn-finance">YFI</option>
-                                <option value="synthetix-network-token">SNX</option>
-                                <option value="0x">ZRX</option>
-                                <option value="balancer">BAL</option>
-                                <option value="1inch">1INCH</option>
-                                <option value="dash">DASH</option>
-                                <option value="zcash">ZEC</option>
-                                <option value="nem">XEM</option>
-                                <option value="iota">MIOTA</option>
-                                <option value="neo">NEO</option>
-                                <option value="qtum">QTUM</option>
-                                <option value="waves">WAVES</option>
-                                <option value="nano">XNO</option>
-                                <option value="icon">ICX</option>
-                                <option value="ontology">ONT</option>
-                                <option value="zilliqa">ZIL</option>
-                                <option value="harmony">ONE</option>
-                                <option value="elrond-erd-2">EGLD</option>
-                                <option value="near">NEAR</option>
-                                <option value="fantom">FTM</option>
-                                <option value="the-graph">GRT</option>
-                                <option value="decentraland">MANA</option>
-                                <option value="sandbox">SAND</option>
-                                <option value="enjincoin">ENJ</option>
-                                <option value="axie-infinity">AXS</option>
-                                <option value="gala">GALA</option>
-                                <option value="chiliz">CHZ</option>
-                                <option value="flow">FLOW</option>
-                                <option value="internet-computer">ICP</option>
-                                <option value="theta-token">THETA</option>
-                                <option value="vega-protocol">VEGA</option>
-                                <option value="celo">CELO</option>
-                                <option value="kusama">KSM</option>
-                                <option value="eos">EOS</option>
-                                <option value="tron">TRX</option>
-                                <option value="bitcoin-sv">BSV</option>
+                            <select id="fromCrypto" class="currency-select" data-searchable="true">
+                                <option value="bitcoin">BTC - Bitcoin</option>
+                                <option value="ethereum">ETH - Ethereum</option>
+                                <option value="cardano">ADA - Cardano</option>
+                                <option value="solana">SOL - Solana</option>
+                                <option value="binancecoin">BNB - Binance Coin</option>
+                                <option value="ripple">XRP - Ripple</option>
+                                <option value="polkadot">DOT - Polkadot</option>
+                                <option value="dogecoin">DOGE - Dogecoin</option>
+                                <option value="avalanche-2">AVAX - Avalanche</option>
+                                <option value="polygon">MATIC - Polygon</option>
+                                <option value="chainlink">LINK - Chainlink</option>
+                                <option value="uniswap">UNI - Uniswap</option>
+                                <option value="litecoin">LTC - Litecoin</option>
+                                <option value="bitcoin-cash">BCH - Bitcoin Cash</option>
+                                <option value="stellar">XLM - Stellar</option>
+                                <option value="vechain">VET - VeChain</option>
+                                <option value="filecoin">FIL - Filecoin</option>
+                                <option value="cosmos">ATOM - Cosmos</option>
+                                <option value="monero">XMR - Monero</option>
+                                <option value="algorand">ALGO - Algorand</option>
+                                <option value="tezos">XTZ - Tezos</option>
+                                <option value="aave">AAVE - Aave</option>
+                                <option value="compound">COMP - Compound</option>
+                                <option value="sushi">SUSHI - SushiSwap</option>
+                                <option value="pancakeswap-token">CAKE - PancakeSwap</option>
+                                <option value="curve-dao-token">CRV - Curve DAO Token</option>
+                                <option value="yearn-finance">YFI - Yearn Finance</option>
+                                <option value="synthetix-network-token">SNX - Synthetix</option>
+                                <option value="0x">ZRX - 0x Protocol</option>
+                                <option value="balancer">BAL - Balancer</option>
+                                <option value="1inch">1INCH - 1inch</option>
+                                <option value="dash">DASH - Dash</option>
+                                <option value="zcash">ZEC - Zcash</option>
+                                <option value="nem">XEM - NEM</option>
+                                <option value="iota">MIOTA - IOTA</option>
+                                <option value="neo">NEO - Neo</option>
+                                <option value="qtum">QTUM - Qtum</option>
+                                <option value="waves">WAVES - Waves</option>
+                                <option value="nano">XNO - Nano</option>
+                                <option value="icon">ICX - ICON</option>
+                                <option value="ontology">ONT - Ontology</option>
+                                <option value="zilliqa">ZIL - Zilliqa</option>
+                                <option value="harmony">ONE - Harmony</option>
+                                <option value="elrond-erd-2">EGLD - Elrond</option>
+                                <option value="near">NEAR - NEAR Protocol</option>
+                                <option value="fantom">FTM - Fantom</option>
+                                <option value="the-graph">GRT - The Graph</option>
+                                <option value="decentraland">MANA - Decentraland</option>
+                                <option value="sandbox">SAND - The Sandbox</option>
+                                <option value="enjincoin">ENJ - Enjin Coin</option>
+                                <option value="axie-infinity">AXS - Axie Infinity</option>
+                                <option value="gala">GALA - Gala</option>
+                                <option value="chiliz">CHZ - Chiliz</option>
+                                <option value="flow">FLOW - Flow</option>
+                                <option value="internet-computer">ICP - Internet Computer</option>
+                                <option value="theta-token">THETA - Theta Token</option>
+                                <option value="vega-protocol">VEGA - Vega Protocol</option>
+                                <option value="celo">CELO - Celo</option>
+                                <option value="kusama">KSM - Kusama</option>
+                                <option value="eos">EOS - EOS</option>
+                                <option value="tron">TRX - TRON</option>
+                                <option value="bitcoin-sv">BSV - Bitcoin SV</option>
                             </select>
                             <span class="dropdown-icon">▼</span>
                         </div>
@@ -561,7 +559,7 @@
 
         <!-- Alerts Tab -->
         <div id="alerts-tab" class="tab-content">
-            <div class="liquid-glass content-card">
+            <div class="content-card">
                 <div class="alerts-header">
                     <h3>Rate Alerts</h3>
                     <button id="addAlertBtn" class="action-button primary">➕ Add Alert</button>
@@ -575,7 +573,7 @@
 
         <!-- Favorites Tab -->
         <div id="favorites-tab" class="tab-content">
-            <div class="liquid-glass content-card">
+            <div class="content-card">
                 <div class="favorites-header">
                     <h3>Favorite Pairs</h3>
                 </div>
@@ -588,7 +586,7 @@
 
         <!-- History Tab -->
         <div id="history-tab" class="tab-content">
-            <div class="liquid-glass content-card">
+            <div class="content-card">
                 <div class="history-header">
                     <h3>Historical Data</h3>
                     <div class="history-controls">
@@ -618,14 +616,6 @@
         </div>
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay hidden">
-        <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <span class="loading-text">Loading...</span>
-        </div>
-    </div>
-
     <!-- Alert Modal -->
     <div id="alertModal" class="modal hidden">
         <div class="modal-content">
@@ -636,15 +626,16 @@
             <div class="modal-body">
                 <div class="alert-form">
                     <div class="form-group">
-                        <label>From Currency:</label>
-                        <select id="alertFromCurrency" class="form-select">
-                            <!-- Will be populated dynamically -->
+                        <label for="alertFromCurrency">From Currency/Crypto:</label>
+                        <select id="alertFromCurrency" class="form-select" data-searchable="true">
+                            <option value="">Select currency or crypto...</option>
                         </select>
                     </div>
+                    
                     <div class="form-group">
-                        <label>To Currency:</label>
-                        <select id="alertToCurrency" class="form-select">
-                            <!-- Will be populated dynamically -->
+                        <label for="alertToCurrency">To Currency/Crypto:</label>
+                        <select id="alertToCurrency" class="form-select" data-searchable="true">
+                            <option value="">Select currency or crypto...</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -673,4 +664,4 @@
 
     <script src="popup.js"></script>
 </body>
-</html>
+</html> 

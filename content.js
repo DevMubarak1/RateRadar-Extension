@@ -1,8 +1,8 @@
 // RateRadar Content Script - Enhanced Smart Shopping with Proper Price Display
-class RateRadarContent {
-    constructor() {
-        this.isEnabled = false;
-        this.userCurrency = 'USD';
+    class RateRadarContent {
+        constructor() {
+            this.isEnabled = false;
+            this.userCurrency = 'USD';
         this.baseCurrency = 'USD';
         this.excludedSites = [
             'github.com', 'gitlab.com', 'bitbucket.org', 'stackoverflow.com',
@@ -10,50 +10,65 @@ class RateRadarContent {
             'code.visualstudio.com', 'atom.io', 'sublimetext.com'
         ];
         this.priceOverlay = null;
-        this.init();
-    }
-
-    async init() {
-        try {
-            // Check if we're on an excluded site
-            if (this.isExcludedSite()) {
-                console.log('RateRadar: Excluded site detected, skipping initialization');
-                return;
-            }
-
-            // Load settings
-            await this.loadSettings();
-            
-            // Only initialize if smart shopping is enabled
-            if (this.isEnabled) {
-                this.setupHighlightListener();
-                console.log('RateRadar: Smart shopping enabled for highlight-based conversion');
-            }
-        } catch (error) {
-            console.log('RateRadar: Error during initialization:', error);
+                this.init();
         }
-    }
+
+        async init() {
+            try {
+                console.log('RateRadar: Initializing content script...');
+                
+                // Check if we're on an excluded site
+                if (this.isExcludedSite()) {
+                    console.log('RateRadar: Excluded site detected, skipping initialization');
+                    return;
+                }
+                
+                // Load settings
+                await this.loadSettings();
+                console.log('RateRadar: Settings loaded - Smart shopping enabled:', this.isEnabled);
+                
+                // Only initialize if smart shopping is enabled
+                if (this.isEnabled) {
+                    this.setupHighlightListener();
+                    console.log('RateRadar: Smart shopping enabled for highlight-based conversion');
+                } else {
+                    console.log('RateRadar: Smart shopping is disabled in settings');
+                }
+            } catch (error) {
+                console.log('RateRadar: Error during initialization:', error);
+            }
+        }
 
     isExcludedSite() {
         const hostname = window.location.hostname.toLowerCase();
         return this.excludedSites.some(site => hostname.includes(site));
-    }
-
-    async loadSettings() {
-        try {
-            const result = await chrome.storage.sync.get([
-                'smartShopping',
-                'baseCurrency',
-                'userCurrency'
-            ]);
-            
-            this.isEnabled = result.smartShopping || false;
-            this.baseCurrency = result.baseCurrency || 'USD';
-            this.userCurrency = result.userCurrency || 'USD';
-        } catch (error) {
-            console.log('RateRadar: Error loading settings:', error);
         }
-    }
+
+        async loadSettings() {
+            try {
+                const result = await chrome.storage.sync.get([
+                    'smartShopping',
+                    'baseCurrency',
+                    'userCurrency'
+                ]);
+                
+                this.isEnabled = result.smartShopping !== false; // Default to true if not set
+                this.baseCurrency = result.baseCurrency || 'USD';
+                this.userCurrency = result.userCurrency || 'USD';
+                
+                console.log('RateRadar: Loaded settings:', {
+                    smartShopping: this.isEnabled,
+                    baseCurrency: this.baseCurrency,
+                    userCurrency: this.userCurrency
+                });
+            } catch (error) {
+                console.log('RateRadar: Error loading settings:', error);
+                // Default to enabled if there's an error
+                this.isEnabled = true;
+                this.baseCurrency = 'USD';
+                this.userCurrency = 'USD';
+            }
+        }
 
     setupHighlightListener() {
         // Listen for text selection
@@ -72,6 +87,7 @@ class RateRadarContent {
         this.removeOverlay();
         
         if (selectedText && this.isPriceText(selectedText)) {
+            console.log('RateRadar: Price detected:', selectedText);
             this.showPriceOverlay(selectedText, event);
         }
     }
@@ -127,7 +143,7 @@ class RateRadarContent {
             if (text.includes(symbol)) {
                 currency = code;
                 amount = parseFloat(text.replace(symbol, '').replace(/,/g, ''));
-                break;
+                        break;
             }
         }
 
@@ -164,8 +180,8 @@ class RateRadarContent {
             
             if (convertedAmount > 0) {
                 this.createOverlay(priceText, convertedAmount, currency, this.userCurrency, event);
-            }
-        } catch (error) {
+                    }
+                } catch (error) {
             console.log('RateRadar: Error showing price overlay:', error);
         }
     }
@@ -223,21 +239,21 @@ class RateRadarContent {
         this.removeOverlay();
 
         // Create overlay element
-        const overlay = document.createElement('div');
-        overlay.className = 'rateradar-price-overlay';
-        overlay.style.cssText = `
+            const overlay = document.createElement('div');
+            overlay.className = 'rateradar-price-overlay';
+            overlay.style.cssText = `
             position: fixed;
             background: linear-gradient(135deg, #3B82F6, #2563EB);
-            color: white;
+                color: white;
             padding: 12px 16px;
             border-radius: 12px;
             box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             font-size: 14px;
-            font-weight: 600;
+                font-weight: 600;
             z-index: 10000;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+                border: 1px solid rgba(255, 255, 255, 0.2);
             max-width: 300px;
             word-wrap: break-word;
             animation: rateradar-fade-in 0.3s ease-out;
@@ -281,15 +297,15 @@ class RateRadarContent {
 
     formatPrice(amount, currency) {
         const currencySymbols = {
-            'USD': '$',
-            'EUR': '€',
-            'GBP': '£',
-            'JPY': '¥',
-            'NGN': '₦',
+                'USD': '$',
+                'EUR': '€',
+                'GBP': '£',
+                'JPY': '¥',
+                'NGN': '₦',
             'ZAR': 'R',
-            'INR': '₹',
+                'INR': '₹',
             'BRL': 'R$',
-            'MXN': '$',
+                'MXN': '$',
             'ARS': '$',
             'CLP': '$',
             'COP': '$',
@@ -313,35 +329,35 @@ class RateRadarContent {
             'LKR': '₨',
             'NPR': '₨',
             'THB': '฿',
-            'VND': '₫',
+                'VND': '₫',
             'IDR': 'Rp',
             'MYR': 'RM',
-            'SGD': 'S$',
-            'HKD': 'HK$',
+                'SGD': 'S$',
+                'HKD': 'HK$',
             'TWD': 'NT$',
             'KRW': '₩',
             'PHP': '₱',
             'ILS': '₪',
-            'AED': 'د.إ',
+                'AED': 'د.إ',
             'SAR': '﷼',
             'QAR': '﷼',
-            'KWD': 'د.ك',
-            'BHD': '.د.ب',
-            'OMR': 'ر.ع.',
+                'KWD': 'د.ك',
+                'BHD': '.د.ب',
+                'OMR': 'ر.ع.',
             'JOD': 'د.ا',
-            'LBP': 'ل.ل',
-            'IRR': '﷼',
+                'LBP': 'ل.ل',
+                'IRR': '﷼',
             'IQD': 'ع.د',
-            'AFN': '؋',
-            'UZS': 'so\'m',
+                'AFN': '؋',
+                'UZS': 'so\'m',
             'KZT': '₸',
             'GEL': '₾',
             'ARM': '֏',
             'AZN': '₼',
-            'BYN': 'Br',
+                'BYN': 'Br',
             'MDL': 'L',
             'UAH': '₴',
-            'KGS': 'с',
+                'KGS': 'с',
             'TJS': 'ЅМ',
             'TMT': 'T',
             'MNT': '₮',
