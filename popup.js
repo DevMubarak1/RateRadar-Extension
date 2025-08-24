@@ -274,30 +274,44 @@ class RateRadar {
             const toCurrency = document.getElementById('toCurrency').value;
             
             if (fromAmount <= 0) {
+                document.getElementById('toAmount').value = '';
+                document.getElementById('exchangeRate').textContent = `1 ${fromCurrency} = 0.00 ${toCurrency}`;
+                return;
+            }
+            
+            if (fromCurrency === toCurrency) {
                 document.getElementById('toAmount').value = fromAmount.toFixed(2);
+                document.getElementById('exchangeRate').textContent = `1 ${fromCurrency} = 1.00 ${toCurrency}`;
                 return;
             }
             
-            // Check if online
-            if (!this.isOnline) {
-                document.getElementById('toAmount').value = 'Offline';
-                document.getElementById('exchangeRate').textContent = 'Offline';
-                return;
-            }
+            // Show loading state
+            document.getElementById('toAmount').value = 'Loading...';
+            document.getElementById('exchangeRate').textContent = 'Fetching rate...';
             
-            // Get real-time exchange rate
             const rate = await this.getExchangeRate(fromCurrency, toCurrency);
-            const convertedAmount = fromAmount * rate;
-            document.getElementById('toAmount').value = convertedAmount.toFixed(2);
-            document.getElementById('exchangeRate').textContent = `1 ${fromCurrency} = ${rate.toFixed(4)} ${toCurrency}`;
+            
+            if (rate && !isNaN(rate)) {
+                const convertedAmount = fromAmount * rate;
+                document.getElementById('toAmount').value = convertedAmount.toFixed(2);
+                document.getElementById('exchangeRate').textContent = `1 ${fromCurrency} = ${rate.toFixed(4)} ${toCurrency}`;
+                
+                // Update last updated time
+                const lastUpdatedElement = document.getElementById('lastUpdated');
+                if (lastUpdatedElement) {
+                    lastUpdatedElement.textContent = new Date().toLocaleTimeString();
+                }
+                
+                console.log(`Conversion successful: ${fromAmount} ${fromCurrency} = ${convertedAmount.toFixed(2)} ${toCurrency}`);
+            } else {
+                throw new Error('Invalid exchange rate received');
+            }
             
         } catch (error) {
             console.error('Conversion error:', error);
-            // Fallback to placeholder data
-            const rate = 1.1;
-            const convertedAmount = fromAmount * rate;
-            document.getElementById('toAmount').value = convertedAmount.toFixed(2);
-            document.getElementById('exchangeRate').textContent = `1 ${fromCurrency} = ${rate.toFixed(4)} ${toCurrency}`;
+            document.getElementById('toAmount').value = 'Error';
+            document.getElementById('exchangeRate').textContent = 'Rate unavailable';
+            this.showErrorMessage('Failed to convert currency. Please try again.');
         }
     }
 
@@ -308,66 +322,71 @@ class RateRadar {
             const toCrypto = document.getElementById('toCrypto').value;
             
             if (fromAmount <= 0) {
+                document.getElementById('toCryptoAmount').value = '';
+                document.getElementById('cryptoPrice').textContent = '0.00';
+                document.getElementById('cryptoChange').textContent = '+0.00%';
+                return;
+            }
+            
+            if (fromCrypto === toCrypto) {
                 document.getElementById('toCryptoAmount').value = fromAmount.toFixed(6);
+                document.getElementById('cryptoPrice').textContent = '1.00';
+                document.getElementById('cryptoChange').textContent = '+0.00%';
                 return;
             }
             
-            // Check if online
-            if (!this.isOnline) {
-                document.getElementById('toCryptoAmount').value = 'Offline';
-                document.getElementById('cryptoPrice').textContent = 'Offline';
-                document.getElementById('cryptoChange').textContent = 'Offline';
-                return;
-            }
+            // Show loading state
+            document.getElementById('toCryptoAmount').value = 'Loading...';
+            document.getElementById('cryptoPrice').textContent = 'Loading...';
+            document.getElementById('cryptoChange').textContent = 'Loading...';
             
-            // Handle large numbers properly
-            if (fromAmount > 1000000) {
-                console.log('Large amount detected:', fromAmount);
-            }
-            
-            // Get real-time crypto price
+            // Get crypto price
             const price = await this.getCryptoPrice(fromCrypto, toCrypto);
-            const convertedAmount = fromAmount * price;
             
-            // Format the result based on the size
-            let formattedResult;
-            if (convertedAmount >= 1000000) {
-                formattedResult = convertedAmount.toExponential(2);
-            } else if (convertedAmount >= 1000) {
-                formattedResult = convertedAmount.toLocaleString('en-US', { 
-                    minimumFractionDigits: 2, 
-                    maximumFractionDigits: 2 
-                });
+            if (price && !isNaN(price)) {
+                const convertedAmount = fromAmount * price;
+                
+                // Format large numbers properly
+                let displayAmount;
+                if (convertedAmount > 1000000) {
+                    displayAmount = convertedAmount.toExponential(2);
+                } else if (convertedAmount > 1000) {
+                    displayAmount = convertedAmount.toLocaleString('en-US', { maximumFractionDigits: 2 });
+                } else {
+                    displayAmount = convertedAmount.toFixed(6);
+                }
+                
+                document.getElementById('toCryptoAmount').value = displayAmount;
+                document.getElementById('cryptoPrice').textContent = `$${price.toFixed(2)}`;
+                
+                // Get 24h change
+                try {
+                    const change = await this.getCryptoChange(fromCrypto);
+                    if (change && !isNaN(change)) {
+                        const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+                        document.getElementById('cryptoChange').textContent = changeText;
+                        document.getElementById('cryptoChange').className = `change-text ${change >= 0 ? 'positive' : 'negative'}`;
+                    } else {
+                        document.getElementById('cryptoChange').textContent = '+0.00%';
+                        document.getElementById('cryptoChange').className = 'change-text positive';
+                    }
+                } catch (changeError) {
+                    console.log('Could not fetch 24h change:', changeError);
+                    document.getElementById('cryptoChange').textContent = '+0.00%';
+                    document.getElementById('cryptoChange').className = 'change-text positive';
+                }
+                
+                console.log(`Crypto conversion successful: ${fromAmount} ${fromCrypto} = ${displayAmount} ${toCrypto}`);
             } else {
-                formattedResult = convertedAmount.toFixed(6);
+                throw new Error('Invalid crypto price received');
             }
-            
-            document.getElementById('toCryptoAmount').value = formattedResult;
-            
-            // Update price display
-            const priceDisplay = price >= 1000 ? 
-                price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) :
-                price.toFixed(6);
-            document.getElementById('cryptoPrice').textContent = `$${priceDisplay}`;
-            
-            // Get price change
-            const change = await this.getCryptoChange(fromCrypto);
-            const changeElement = document.getElementById('cryptoChange');
-            changeElement.textContent = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
-            changeElement.className = `change-text ${change >= 0 ? 'positive' : 'negative'}`;
             
         } catch (error) {
             console.error('Crypto conversion error:', error);
-            // Fallback to placeholder data
-            const price = 50000;
-            const convertedAmount = fromAmount * price;
-            const formattedResult = convertedAmount >= 1000000 ? 
-                convertedAmount.toExponential(2) : 
-                convertedAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('toCryptoAmount').value = formattedResult;
-            document.getElementById('cryptoPrice').textContent = `$${price.toLocaleString()}`;
-            document.getElementById('cryptoChange').textContent = '+0.00%';
-            document.getElementById('cryptoChange').className = 'change-text positive';
+            document.getElementById('toCryptoAmount').value = 'Error';
+            document.getElementById('cryptoPrice').textContent = 'Error';
+            document.getElementById('cryptoChange').textContent = 'Error';
+            this.showErrorMessage('Failed to convert cryptocurrency. Please try again.');
         }
     }
 
@@ -1089,40 +1108,63 @@ class RateRadar {
 
     async getExchangeRate(fromCurrency, toCurrency) {
         try {
+            console.log(`Fetching rate: ${fromCurrency} to ${toCurrency}`);
+            
             // Try multiple API endpoints for reliability
             const apis = [
-                `https://api.exchangerate.host/latest?base=${fromCurrency}&symbols=${toCurrency}`,
-                `https://api.freecurrencyapi.com/v1/latest?apikey=fca_live_1234567890abcdef&base_currency=${fromCurrency}&currencies=${toCurrency}`,
-                `https://latest.currency-api.pages.dev/v1/currencies/${fromCurrency.toLowerCase()}.json`
+                {
+                    url: `https://api.exchangerate.host/latest?base=${fromCurrency.toUpperCase()}&symbols=${toCurrency.toUpperCase()}`,
+                    handler: (data) => data.rates && data.rates[toCurrency.toUpperCase()]
+                },
+                {
+                    url: `https://latest.currency-api.pages.dev/v1/currencies/${fromCurrency.toLowerCase()}.json`,
+                    handler: (data) => data[fromCurrency.toLowerCase()] && data[fromCurrency.toLowerCase()][toCurrency.toLowerCase()]
+                },
+                {
+                    url: `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${fromCurrency.toLowerCase()}.json`,
+                    handler: (data) => data[fromCurrency.toLowerCase()] && data[fromCurrency.toLowerCase()][toCurrency.toLowerCase()]
+                }
             ];
             
-            for (const api of apis) {
+            for (let i = 0; i < apis.length; i++) {
                 try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    console.log(`Trying API ${i + 1}: ${apis[i].url}`);
                     
-                    const response = await fetch(api, { signal: controller.signal });
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
+                    
+                    const response = await fetch(apis[i].url, { 
+                        signal: controller.signal,
+                        headers: {
+                            'Accept': 'application/json',
+                            'User-Agent': 'RateRadar/1.0'
+                        }
+                    });
+                    
                     clearTimeout(timeoutId);
                     
                     if (response.ok) {
                         const data = await response.json();
+                        console.log(`API ${i + 1} response:`, data);
                         
-                        // Handle different API response formats
-                        if (data.rates && data.rates[toCurrency]) {
-                            return data.rates[toCurrency];
-                        } else if (data.data && data.data[toCurrency]) {
-                            return data.data[toCurrency];
-                        } else if (data[fromCurrency.toLowerCase()] && data[fromCurrency.toLowerCase()][toCurrency.toLowerCase()]) {
-                            return data[fromCurrency.toLowerCase()][toCurrency.toLowerCase()];
+                        const rate = apis[i].handler(data);
+                        if (rate) {
+                            console.log(`Success! Rate: ${rate}`);
+                            return parseFloat(rate);
                         }
                     }
                 } catch (apiError) {
-                    console.log(`API ${api} failed, trying next...`);
+                    console.log(`API ${i + 1} failed:`, apiError.message);
                     continue;
                 }
             }
             
-            throw new Error('All APIs failed');
+            // If all APIs fail, return a fallback rate (1:1 for same currency, 0 for others)
+            if (fromCurrency.toLowerCase() === toCurrency.toLowerCase()) {
+                return 1;
+            }
+            
+            throw new Error('All exchange rate APIs failed');
             
         } catch (error) {
             console.error('Error fetching exchange rate:', error);
@@ -1132,197 +1174,123 @@ class RateRadar {
 
     async getCryptoPrice(cryptoId, targetCurrency = 'usd') {
         try {
+            console.log(`Fetching crypto price: ${cryptoId} to ${targetCurrency}`);
+            
             // Map common crypto names to CoinGecko IDs
             const cryptoMap = {
-                'bitcoin': 'bitcoin',
-                'btc': 'bitcoin',
-                'ethereum': 'ethereum',
-                'eth': 'ethereum',
-                'binancecoin': 'binancecoin',
-                'bnb': 'binancecoin',
-                'cardano': 'cardano',
-                'ada': 'cardano',
-                'solana': 'solana',
-                'sol': 'solana',
-                'ripple': 'ripple',
-                'xrp': 'ripple',
-                'polkadot': 'polkadot',
-                'dot': 'polkadot',
-                'dogecoin': 'dogecoin',
-                'doge': 'dogecoin',
-                'avalanche-2': 'avalanche-2',
-                'avax': 'avalanche-2',
-                'chainlink': 'chainlink',
-                'link': 'chainlink',
-                'matic-network': 'matic-network',
-                'matic': 'matic-network',
-                'litecoin': 'litecoin',
-                'ltc': 'litecoin',
-                'uniswap': 'uniswap',
-                'uni': 'uniswap',
-                'stellar': 'stellar',
-                'xlm': 'stellar',
-                'vechain': 'vechain',
-                'vet': 'vechain',
-                'filecoin': 'filecoin',
-                'fil': 'filecoin',
-                'tron': 'tron',
-                'trx': 'tron',
-                'monero': 'monero',
-                'xmr': 'monero',
-                'eos': 'eos',
-                'aave': 'aave',
-                'algorand': 'algorand',
-                'algo': 'algorand',
-                'tezos': 'tezos',
-                'xtz': 'tezos',
-                'cosmos': 'cosmos',
-                'atom': 'cosmos',
-                'neo': 'neo',
-                'dash': 'dash',
-                'zcash': 'zcash',
-                'zec': 'zcash',
-                'bitcoin-cash': 'bitcoin-cash',
-                'bch': 'bitcoin-cash',
-                'iota': 'iota',
-                'miota': 'iota',
-                'nem': 'nem',
-                'xem': 'nem',
-                'waves': 'waves',
-                'decred': 'decred',
-                'dcr': 'decred',
-                'qtum': 'qtum',
-                'omisego': 'omisego',
-                'omg': 'omisego',
-                'icon': 'icon',
-                'icx': 'icon',
-                'zilliqa': 'zilliqa',
-                'zil': 'zilliqa',
-                '0x': '0x',
-                'zrx': '0x',
-                'basic-attention-token': 'basic-attention-token',
-                'bat': 'basic-attention-token',
-                'augur': 'augur',
-                'rep': 'augur',
-                'golem': 'golem',
-                'gnt': 'golem',
-                'siacoin': 'siacoin',
-                'sc': 'siacoin',
-                'digibyte': 'digibyte',
-                'dgb': 'digibyte',
-                'verge': 'verge',
-                'xvg': 'verge',
-                'steem': 'steem',
-                'pivx': 'pivx',
-                'komodo': 'komodo',
-                'kmd': 'komodo',
-                'ardor': 'ardor',
-                'ardr': 'ardor',
-                'stratis': 'stratis',
-                'strat': 'stratis',
-                'nxt': 'nxt',
-                'factom': 'factom',
-                'fct': 'factom',
-                'maidsafecoin': 'maidsafecoin',
-                'maid': 'maidsafecoin',
-                'peercoin': 'peercoin',
-                'ppc': 'peercoin',
-                'namecoin': 'namecoin',
-                'nmc': 'namecoin',
-                'feathercoin': 'feathercoin',
-                'ftc': 'feathercoin',
-                'novacoin': 'novacoin',
-                'nvc': 'novacoin',
-                'primecoin': 'primecoin',
-                'xpm': 'primecoin',
-                'gridcoin': 'gridcoin',
-                'grc': 'gridcoin',
-                'vertcoin': 'vertcoin',
-                'vtc': 'vertcoin',
-                'potcoin': 'potcoin',
-                'pot': 'potcoin',
-                'megacoin': 'megacoin',
-                'mec': 'megacoin',
-                'auroracoin': 'auroracoin',
-                'aur': 'auroracoin',
-                'reddcoin': 'reddcoin',
-                'rdd': 'reddcoin',
-                'blackcoin': 'blackcoin',
-                'blk': 'blackcoin',
-                'nushares': 'nushares',
-                'nsr': 'nushares',
-                'nubits': 'nubits',
-                'usnbt': 'nubits',
-                'mazacoin': 'mazacoin',
-                'mzc': 'mazacoin',
-                'burst': 'burst',
-                'counterparty': 'counterparty',
-                'xcp': 'counterparty',
-                'omni': 'omni',
-                'mastercoin': 'omni',
-                'msc': 'omni',
-                'bitshares': 'bitshares',
-                'bts': 'bitshares',
-                'zcoin': 'zcoin',
-                'xzc': 'zcoin',
-                'zencash': 'zencash',
-                'zen': 'zencash',
-                'horizen': 'horizen',
-                'aeon': 'aeon',
-                'sumokoin': 'sumokoin',
-                'sumo': 'sumokoin',
-                'masari': 'masari',
-                'msr': 'masari',
-                'turtlecoin': 'turtlecoin',
-                'trtl': 'turtlecoin',
-                'karbo': 'karbo',
-                'krb': 'karbo',
-                'haven': 'haven',
-                'xhv': 'haven',
+                'bitcoin': 'bitcoin', 'btc': 'bitcoin',
+                'ethereum': 'ethereum', 'eth': 'ethereum',
+                'binancecoin': 'binancecoin', 'bnb': 'binancecoin',
+                'cardano': 'cardano', 'ada': 'cardano',
+                'solana': 'solana', 'sol': 'solana',
+                'ripple': 'ripple', 'xrp': 'ripple',
+                'polkadot': 'polkadot', 'dot': 'polkadot',
+                'dogecoin': 'dogecoin', 'doge': 'dogecoin',
+                'avalanche-2': 'avalanche-2', 'avax': 'avalanche-2',
+                'chainlink': 'chainlink', 'link': 'chainlink',
+                'matic-network': 'matic-network', 'matic': 'matic-network',
+                'litecoin': 'litecoin', 'ltc': 'litecoin',
+                'uniswap': 'uniswap', 'uni': 'uniswap',
+                'stellar': 'stellar', 'xlm': 'stellar',
+                'vechain': 'vechain', 'vet': 'vechain',
+                'filecoin': 'filecoin', 'fil': 'filecoin',
+                'tron': 'tron', 'trx': 'tron',
+                'monero': 'monero', 'xmr': 'monero',
+                'eos': 'eos', 'aave': 'aave',
+                'algorand': 'algorand', 'algo': 'algorand',
+                'tezos': 'tezos', 'xtz': 'tezos',
+                'cosmos': 'cosmos', 'atom': 'cosmos',
+                'neo': 'neo', 'dash': 'dash',
+                'zcash': 'zcash', 'zec': 'zcash',
+                'bitcoin-cash': 'bitcoin-cash', 'bch': 'bitcoin-cash',
+                'iota': 'iota', 'miota': 'iota',
+                'nem': 'nem', 'xem': 'nem',
+                'waves': 'waves', 'decred': 'decred', 'dcr': 'decred',
+                'qtum': 'qtum', 'omisego': 'omisego', 'omg': 'omisego',
+                'icon': 'icon', 'icx': 'icon',
+                'zilliqa': 'zilliqa', 'zil': 'zilliqa',
+                '0x': '0x', 'zrx': '0x',
+                'basic-attention-token': 'basic-attention-token', 'bat': 'basic-attention-token',
+                'augur': 'augur', 'rep': 'augur',
+                'golem': 'golem', 'gnt': 'golem',
+                'siacoin': 'siacoin', 'sc': 'siacoin',
+                'digibyte': 'digibyte', 'dgb': 'digibyte',
+                'verge': 'verge', 'xvg': 'verge',
+                'steem': 'steem', 'pivx': 'pivx',
+                'komodo': 'komodo', 'kmd': 'komodo',
+                'ardor': 'ardor', 'ardr': 'ardor',
+                'stratis': 'stratis', 'strat': 'stratis',
+                'nxt': 'nxt', 'factom': 'factom', 'fct': 'factom',
+                'maidsafecoin': 'maidsafecoin', 'maid': 'maidsafecoin',
+                'peercoin': 'peercoin', 'ppc': 'peercoin',
+                'namecoin': 'namecoin', 'nmc': 'namecoin',
+                'feathercoin': 'feathercoin', 'ftc': 'feathercoin',
+                'novacoin': 'novacoin', 'nvc': 'novacoin',
+                'primecoin': 'primecoin', 'xpm': 'primecoin',
+                'gridcoin': 'gridcoin', 'grc': 'gridcoin',
+                'vertcoin': 'vertcoin', 'vtc': 'vertcoin',
+                'potcoin': 'potcoin', 'pot': 'potcoin',
+                'megacoin': 'megacoin', 'mec': 'megacoin',
+                'auroracoin': 'auroracoin', 'aur': 'auroracoin',
+                'reddcoin': 'reddcoin', 'rdd': 'reddcoin',
+                'blackcoin': 'blackcoin', 'blk': 'blackcoin',
+                'nushares': 'nushares', 'nsr': 'nushares',
+                'nubits': 'nubits', 'usnbt': 'nubits',
+                'mazacoin': 'mazacoin', 'mzc': 'mazacoin',
+                'burst': 'burst', 'counterparty': 'counterparty', 'xcp': 'counterparty',
+                'omni': 'omni', 'mastercoin': 'omni', 'msc': 'omni',
+                'bitshares': 'bitshares', 'bts': 'bitshares',
+                'zcoin': 'zcoin', 'xzc': 'zcoin',
+                'zencash': 'zencash', 'zen': 'zencash',
+                'horizen': 'horizen', 'aeon': 'aeon',
+                'sumokoin': 'sumokoin', 'sumo': 'sumokoin',
+                'masari': 'masari', 'msr': 'masari',
+                'turtlecoin': 'turtlecoin', 'trtl': 'turtlecoin',
+                'karbo': 'karbo', 'krb': 'karbo',
+                'haven': 'haven', 'xhv': 'haven',
                 'loki-network': 'loki-network',
-                'wownero': 'wownero',
-                'wow': 'wownero',
+                'wownero': 'wownero', 'wow': 'wownero',
                 'ryo-currency': 'ryo-currency',
-                'lethean': 'lethean',
-                'lthn': 'lethean',
-                'dero': 'dero',
-                'graft': 'graft',
-                'grft': 'graft',
-                'stellite': 'stellite',
-                'xla': 'stellite',
-                'triton': 'triton',
-                'xeq': 'triton',
-                'conceal': 'conceal',
-                'ccx': 'conceal',
-                'plenteum': 'plenteum',
-                'pltx': 'plenteum',
-                'italocoin': 'italocoin',
-                'ita': 'italocoin',
-                'dinastycoin': 'dinastycoin',
-                'dcy': 'dinastycoin',
-                'bitcoin-private': 'bitcoin-private',
-                'btcp': 'bitcoin-private',
-                'bitcoin-gold': 'bitcoin-gold',
-                'btg': 'bitcoin-gold',
-                'bitcoin-diamond': 'bitcoin-diamond',
-                'bcd': 'bitcoin-diamond',
-                'bitcoin-cash-abc': 'bitcoin-cash-abc',
-                'bcha': 'bitcoin-cash-abc',
-                'bitcoin-sv': 'bitcoin-sv',
-                'bsv': 'bitcoin-sv',
-                'ethereum-classic': 'ethereum-classic',
-                'etc': 'ethereum-classic'
+                'lethean': 'lethean', 'lthn': 'lethean',
+                'dero': 'dero', 'graft': 'graft', 'grft': 'graft',
+                'stellite': 'stellite', 'xla': 'stellite',
+                'triton': 'triton', 'xeq': 'triton',
+                'conceal': 'conceal', 'ccx': 'conceal',
+                'plenteum': 'plenteum', 'pltx': 'plenteum',
+                'italocoin': 'italocoin', 'ita': 'italocoin',
+                'dinastycoin': 'dinastycoin', 'dcy': 'dinastycoin',
+                'bitcoin-private': 'bitcoin-private', 'btcp': 'bitcoin-private',
+                'bitcoin-gold': 'bitcoin-gold', 'btg': 'bitcoin-gold',
+                'bitcoin-diamond': 'bitcoin-diamond', 'bcd': 'bitcoin-diamond',
+                'bitcoin-cash-abc': 'bitcoin-cash-abc', 'bcha': 'bitcoin-cash-abc',
+                'bitcoin-sv': 'bitcoin-sv', 'bsv': 'bitcoin-sv',
+                'ethereum-classic': 'ethereum-classic', 'etc': 'ethereum-classic'
             };
             
             // Get the correct CoinGecko ID
             const coinGeckoId = cryptoMap[cryptoId.toLowerCase()] || cryptoId.toLowerCase();
             
-            const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=${targetCurrency}&include_24hr_change=true`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            
+            const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=${targetCurrency}&include_24hr_change=true`, {
+                signal: controller.signal,
+                headers: {
+                    'Accept': 'application/json',
+                    'User-Agent': 'RateRadar/1.0'
+                }
+            });
+            
+            clearTimeout(timeoutId);
             
             if (response.ok) {
                 const data = await response.json();
+                console.log(`Crypto API response:`, data);
+                
                 if (data[coinGeckoId] && data[coinGeckoId][targetCurrency]) {
-                    return data[coinGeckoId][targetCurrency];
+                    const price = data[coinGeckoId][targetCurrency];
+                    console.log(`Success! Crypto price: ${price}`);
+                    return parseFloat(price);
                 }
             }
             
@@ -1492,10 +1460,21 @@ class RateRadar {
                 cursor: pointer;
                 border-bottom: 1px solid var(--border-color);
                 transition: background 0.2s ease;
-            " onmouseover="this.style.background='var(--dropdown-hover)'" onmouseout="this.style.background='transparent'">
+            ">
                 ${option.text}
             </div>
         `).join('');
+        
+        // Add event listeners to dropdown items
+        dropdownList.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('mouseover', function() {
+                this.style.background = 'var(--dropdown-hover)';
+            });
+            
+            item.addEventListener('mouseout', function() {
+                this.style.background = 'transparent';
+            });
+        });
     }
 
     getCurrencyOptions() {
