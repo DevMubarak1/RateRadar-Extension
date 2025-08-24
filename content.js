@@ -1,7 +1,7 @@
 // RateRadar Content Script - Enhanced Smart Shopping with Proper Price Display
     class RateRadarContent {
         constructor() {
-            this.isEnabled = false;
+            this.isEnabled = true; // Default to enabled
             this.userCurrency = 'USD';
         this.baseCurrency = 'USD';
         this.excludedSites = [
@@ -25,17 +25,15 @@
                 
                 // Load settings
                 await this.loadSettings();
-                console.log('RateRadar: Settings loaded - Smart shopping enabled:', this.isEnabled);
                 
-                // Only initialize if smart shopping is enabled
-                if (this.isEnabled) {
-                    this.setupHighlightListener();
-                    console.log('RateRadar: Smart shopping enabled for highlight-based conversion');
-                } else {
-                    console.log('RateRadar: Smart shopping is disabled in settings');
-                }
+                // Always initialize smart shopping (default to enabled)
+                this.setupHighlightListener();
+                console.log('RateRadar: Smart shopping enabled for highlight-based conversion');
+                
             } catch (error) {
                 console.log('RateRadar: Error during initialization:', error);
+                // Even if there's an error, enable smart shopping
+                this.setupHighlightListener();
             }
         }
 
@@ -77,6 +75,8 @@
         
         // Remove existing overlay when clicking elsewhere
         document.addEventListener('click', this.removeOverlay.bind(this));
+        
+        console.log('RateRadar: Highlight listener setup complete');
     }
 
     handleTextSelection(event) {

@@ -73,9 +73,25 @@ class RateRadarBackground {
         });
 
         // Handle messages from popup/content scripts
-        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-            this.handleMessage(request, sender, sendResponse);
-            return true; // Keep message channel open for async response
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            console.log('Background: Received message:', message);
+            
+            if (message.action === 'ping') {
+                sendResponse({ success: true, message: 'Background script is running' });
+            } else if (message.action === 'checkSmartShopping') {
+                sendResponse({ 
+                    success: true, 
+                    smartShopping: true,
+                    message: 'Smart shopping is enabled' 
+                });
+            } else if (message.action === 'getSettings') {
+                chrome.storage.sync.get(['smartShopping', 'baseCurrency', 'userCurrency'], (result) => {
+                    sendResponse({ success: true, settings: result });
+                });
+                return true; // Keep message channel open for async response
+            }
+            
+            sendResponse({ success: true });
         });
 
         // Handle extension startup

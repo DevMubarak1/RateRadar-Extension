@@ -8,30 +8,30 @@ class RateRadar {
 
     async init() {
         try {
-            console.log('RateRadar initializing...');
+            console.log('RateRadar: Initializing popup...');
             
             // Load settings
             await this.loadSettings();
             
-            // Setup UI elements
+            // Setup UI event listeners
             this.setupUI();
             
             // Apply theme
-            this.applyTheme(this.settings.theme);
+            this.applyTheme();
             
-            // Perform initial conversion
+            // Perform initial conversions
             await this.performConversion();
             await this.performCryptoConversion();
             
-            // Load sample data for tabs
+            // Load data
             this.loadAlertsList();
             this.loadFavoritesList();
             this.loadHistoryList();
             
-            console.log('RateRadar initialized successfully');
+            console.log('RateRadar: Popup initialized successfully');
             
         } catch (error) {
-            console.error('RateRadar initialization error:', error);
+            console.error('RateRadar: Error during initialization:', error);
         }
     }
 
@@ -93,9 +93,16 @@ class RateRadar {
         }
         if (fromCurrency) {
             fromCurrency.addEventListener('change', () => this.performConversion());
+            // Initialize searchable dropdown after a short delay
+            setTimeout(() => {
+                this.makeDropdownSearchable(fromCurrency, this.getCurrencyOptions());
+            }, 100);
         }
         if (toCurrency) {
             toCurrency.addEventListener('change', () => this.performConversion());
+            setTimeout(() => {
+                this.makeDropdownSearchable(toCurrency, this.getCurrencyOptions());
+            }, 100);
         }
 
         // Swap button
@@ -114,9 +121,15 @@ class RateRadar {
         }
         if (fromCrypto) {
             fromCrypto.addEventListener('change', () => this.performCryptoConversion());
+            setTimeout(() => {
+                this.makeDropdownSearchable(fromCrypto, this.getCryptoOptions());
+            }, 100);
         }
         if (toCrypto) {
             toCrypto.addEventListener('change', () => this.performCryptoConversion());
+            setTimeout(() => {
+                this.makeDropdownSearchable(toCrypto, this.getCryptoOptions());
+            }, 100);
         }
 
         // Crypto swap button
@@ -165,142 +178,8 @@ class RateRadar {
         // Alert modal
         this.setupAlertModal();
         
-        // Setup searchable dropdowns
-        this.setupSearchableDropdowns();
-    }
-
-    setupSearchableDropdowns() {
-        // Find all searchable dropdowns
-        document.querySelectorAll('select[data-searchable="true"]').forEach(select => {
-            this.makeDropdownSearchable(select);
-        });
-    }
-
-    makeDropdownSearchable(select) {
-        // Create a wrapper div
-        const wrapper = document.createElement('div');
-        wrapper.className = 'searchable-dropdown-wrapper';
-        wrapper.style.cssText = `
-            position: relative;
-            width: 100%;
-        `;
-        
-        // Create search input
-        const searchInput = document.createElement('input');
-        searchInput.type = 'text';
-        searchInput.className = 'searchable-dropdown-input';
-        searchInput.placeholder = 'Type to search...';
-        searchInput.style.cssText = `
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid var(--input-border);
-            border-radius: 10px;
-            background: var(--input-bg);
-            color: var(--input-text);
-            font-size: 14px;
-            display: none;
-        `;
-        
-        // Create dropdown list
-        const dropdownList = document.createElement('div');
-        dropdownList.className = 'searchable-dropdown-list';
-        dropdownList.style.cssText = `
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            max-height: 200px;
-            overflow-y: auto;
-            background: var(--dropdown-bg);
-            border: 1px solid var(--dropdown-border);
-            border-radius: 8px;
-            box-shadow: 0 4px 12px var(--shadow-color);
-            z-index: 1000;
-            display: none;
-        `;
-        
-        // Insert wrapper before select
-        select.parentNode.insertBefore(wrapper, select);
-        wrapper.appendChild(searchInput);
-        wrapper.appendChild(dropdownList);
-        wrapper.appendChild(select);
-        
-        // Hide original select
-        select.style.display = 'none';
-        
-        // Populate dropdown list
-        this.populateDropdownList(select, dropdownList, searchInput);
-        
-        // Show search input when clicking on wrapper
-        wrapper.addEventListener('click', () => {
-            searchInput.style.display = 'block';
-            dropdownList.style.display = 'block';
-            searchInput.focus();
-        });
-        
-        // Handle search input
-        searchInput.addEventListener('input', () => {
-            const searchTerm = searchInput.value.toLowerCase();
-            const items = dropdownList.querySelectorAll('.dropdown-item');
-            
-            items.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                if (text.includes(searchTerm)) {
-                    item.style.display = 'block';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        });
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!wrapper.contains(e.target)) {
-                searchInput.style.display = 'none';
-                dropdownList.style.display = 'none';
-            }
-        });
-    }
-
-    populateDropdownList(select, dropdownList, searchInput) {
-        // Clear existing items
-        dropdownList.innerHTML = '';
-        
-        // Add items from select
-        Array.from(select.options).forEach(option => {
-            if (option.value) {
-                const item = document.createElement('div');
-                item.className = 'dropdown-item';
-                item.textContent = option.textContent;
-                item.style.cssText = `
-                    padding: 8px 12px;
-                    cursor: pointer;
-                    border-bottom: 1px solid var(--border-color);
-                    transition: background-color 0.2s;
-                `;
-                
-                item.addEventListener('click', () => {
-                    select.value = option.value;
-                    searchInput.value = option.textContent;
-                    dropdownList.style.display = 'none';
-                    searchInput.style.display = 'none';
-                    
-                    // Trigger change event
-                    const event = new Event('change', { bubbles: true });
-                    select.dispatchEvent(event);
-                });
-                
-                item.addEventListener('mouseenter', () => {
-                    item.style.backgroundColor = 'var(--dropdown-hover)';
-                });
-                
-                item.addEventListener('mouseleave', () => {
-                    item.style.backgroundColor = 'transparent';
-                });
-                
-                dropdownList.appendChild(item);
-            }
-        });
+        // Check online status
+        this.checkOnlineStatus();
     }
 
     setupAlertModal() {
@@ -350,57 +229,75 @@ class RateRadar {
         this.currentTab = tabName;
     }
 
+    checkOnlineStatus() {
+        const statusElement = document.getElementById('onlineStatus');
+        if (!statusElement) return;
+        
+        const updateStatus = () => {
+            // Check if we can reach a reliable endpoint
+            fetch('https://api.exchangerate.host/latest?base=USD&symbols=EUR', { 
+                method: 'HEAD',
+                mode: 'no-cors'
+            }).then(() => {
+                statusElement.textContent = '🟢 Online';
+                statusElement.className = 'status-indicator online';
+                this.isOnline = true;
+            }).catch(() => {
+                // Fallback to navigator.onLine
+                if (navigator.onLine) {
+                    statusElement.textContent = '🟢 Online';
+                    statusElement.className = 'status-indicator online';
+                    this.isOnline = true;
+                } else {
+                    statusElement.textContent = '🔴 Offline';
+                    statusElement.className = 'status-indicator offline';
+                    this.isOnline = false;
+                }
+            });
+        };
+        
+        // Initial check
+        updateStatus();
+        
+        // Listen for online/offline events
+        window.addEventListener('online', updateStatus);
+        window.addEventListener('offline', updateStatus);
+        
+        // Also check periodically
+        setInterval(updateStatus, 10000);
+    }
+
     async performConversion() {
         try {
             const fromAmount = parseFloat(document.getElementById('fromAmount').value) || 0;
             const fromCurrency = document.getElementById('fromCurrency').value;
             const toCurrency = document.getElementById('toCurrency').value;
             
-            if (fromAmount <= 0 || fromCurrency === toCurrency) {
+            if (fromAmount <= 0) {
                 document.getElementById('toAmount').value = fromAmount.toFixed(2);
                 return;
             }
             
-            // Handle large numbers and various input formats
-            const cleanAmount = fromAmount.toString().replace(/[^\d.,]/g, '').replace(/,/g, '');
-            const numericAmount = parseFloat(cleanAmount);
-            
-            if (isNaN(numericAmount) || numericAmount <= 0) {
-                document.getElementById('toAmount').value = '0.00';
+            // Check if online
+            if (!this.isOnline) {
+                document.getElementById('toAmount').value = 'Offline';
+                document.getElementById('exchangeRate').textContent = 'Offline';
                 return;
             }
             
             // Get real-time exchange rate
             const rate = await this.getExchangeRate(fromCurrency, toCurrency);
-            const convertedAmount = numericAmount * rate;
-            
-            // Format output based on the size of the number
-            let formattedAmount;
-            if (convertedAmount >= 1000000) {
-                formattedAmount = (convertedAmount / 1000000).toFixed(2) + 'M';
-            } else if (convertedAmount >= 1000) {
-                formattedAmount = (convertedAmount / 1000).toFixed(2) + 'K';
-            } else {
-                formattedAmount = convertedAmount.toFixed(2);
-            }
-            
+            const convertedAmount = fromAmount * rate;
             document.getElementById('toAmount').value = convertedAmount.toFixed(2);
-            
-            // Update rate display
-            document.getElementById('exchangeRate').textContent = 
-                `1 ${fromCurrency} = ${rate.toFixed(4)} ${toCurrency}`;
-            document.getElementById('lastUpdated').textContent = 
-                new Date().toLocaleTimeString();
+            document.getElementById('exchangeRate').textContent = `1 ${fromCurrency} = ${rate.toFixed(4)} ${toCurrency}`;
             
         } catch (error) {
             console.error('Conversion error:', error);
-            // Fallback to placeholder rate
+            // Fallback to placeholder data
             const rate = 1.1;
             const convertedAmount = fromAmount * rate;
             document.getElementById('toAmount').value = convertedAmount.toFixed(2);
-            document.getElementById('exchangeRate').textContent = 
-                `1 ${fromCurrency} = ${rate.toFixed(4)} ${toCurrency}`;
-            document.getElementById('lastUpdated').textContent = 'Error - Using cached rate';
+            document.getElementById('exchangeRate').textContent = `1 ${fromCurrency} = ${rate.toFixed(4)} ${toCurrency}`;
         }
     }
 
@@ -415,33 +312,43 @@ class RateRadar {
                 return;
             }
             
-            // Handle large numbers and various input formats
-            const cleanAmount = fromAmount.toString().replace(/[^\d.,]/g, '').replace(/,/g, '');
-            const numericAmount = parseFloat(cleanAmount);
-            
-            if (isNaN(numericAmount) || numericAmount <= 0) {
-                document.getElementById('toCryptoAmount').value = '0.00';
+            // Check if online
+            if (!this.isOnline) {
+                document.getElementById('toCryptoAmount').value = 'Offline';
+                document.getElementById('cryptoPrice').textContent = 'Offline';
+                document.getElementById('cryptoChange').textContent = 'Offline';
                 return;
+            }
+            
+            // Handle large numbers properly
+            if (fromAmount > 1000000) {
+                console.log('Large amount detected:', fromAmount);
             }
             
             // Get real-time crypto price
             const price = await this.getCryptoPrice(fromCrypto, toCrypto);
-            const convertedAmount = numericAmount * price;
+            const convertedAmount = fromAmount * price;
             
-            // Format output based on the size of the number
-            let formattedAmount;
+            // Format the result based on the size
+            let formattedResult;
             if (convertedAmount >= 1000000) {
-                formattedAmount = (convertedAmount / 1000000).toFixed(2) + 'M';
+                formattedResult = convertedAmount.toExponential(2);
             } else if (convertedAmount >= 1000) {
-                formattedAmount = (convertedAmount / 1000).toFixed(2) + 'K';
+                formattedResult = convertedAmount.toLocaleString('en-US', { 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                });
             } else {
-                formattedAmount = convertedAmount.toFixed(2);
+                formattedResult = convertedAmount.toFixed(6);
             }
             
-            document.getElementById('toCryptoAmount').value = convertedAmount.toFixed(2);
+            document.getElementById('toCryptoAmount').value = formattedResult;
             
             // Update price display
-            document.getElementById('cryptoPrice').textContent = `$${price.toFixed(2)}`;
+            const priceDisplay = price >= 1000 ? 
+                price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) :
+                price.toFixed(6);
+            document.getElementById('cryptoPrice').textContent = `$${priceDisplay}`;
             
             // Get price change
             const change = await this.getCryptoChange(fromCrypto);
@@ -454,8 +361,11 @@ class RateRadar {
             // Fallback to placeholder data
             const price = 50000;
             const convertedAmount = fromAmount * price;
-            document.getElementById('toCryptoAmount').value = convertedAmount.toFixed(2);
-            document.getElementById('cryptoPrice').textContent = `$${price.toFixed(2)}`;
+            const formattedResult = convertedAmount >= 1000000 ? 
+                convertedAmount.toExponential(2) : 
+                convertedAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('toCryptoAmount').value = formattedResult;
+            document.getElementById('cryptoPrice').textContent = `$${price.toLocaleString()}`;
             document.getElementById('cryptoChange').textContent = '+0.00%';
             document.getElementById('cryptoChange').className = 'change-text positive';
         }
@@ -499,202 +409,64 @@ class RateRadar {
         const modal = document.getElementById('alertModal');
         if (modal) {
             modal.classList.remove('hidden');
-            this.populateCurrencyOptions();
+            this.populateCurrencyOptions(type);
         }
     }
 
-    populateCurrencyOptions() {
+    populateCurrencyOptions(type = 'custom') {
         // Populate From Currency dropdown
         const fromCurrencySelect = document.getElementById('alertFromCurrency');
         const toCurrencySelect = document.getElementById('alertToCurrency');
         
         if (fromCurrencySelect && toCurrencySelect) {
             // Clear existing options
-            fromCurrencySelect.innerHTML = '<option value="">Select currency or crypto...</option>';
-            toCurrencySelect.innerHTML = '<option value="">Select currency or crypto...</option>';
+            fromCurrencySelect.innerHTML = '';
+            toCurrencySelect.innerHTML = '';
             
-            // Add currencies
-            const currencies = [
-                { code: 'USD', name: 'US Dollar' },
-                { code: 'EUR', name: 'Euro' },
-                { code: 'GBP', name: 'British Pound' },
-                { code: 'JPY', name: 'Japanese Yen' },
-                { code: 'CNY', name: 'Chinese Yuan' },
-                { code: 'CAD', name: 'Canadian Dollar' },
-                { code: 'AUD', name: 'Australian Dollar' },
-                { code: 'CHF', name: 'Swiss Franc' },
-                { code: 'SEK', name: 'Swedish Krona' },
-                { code: 'NOK', name: 'Norwegian Krone' },
-                { code: 'DKK', name: 'Danish Krone' },
-                { code: 'PLN', name: 'Polish Złoty' },
-                { code: 'CZK', name: 'Czech Koruna' },
-                { code: 'HUF', name: 'Hungarian Forint' },
-                { code: 'RON', name: 'Romanian Leu' },
-                { code: 'BGN', name: 'Bulgarian Lev' },
-                { code: 'HRK', name: 'Croatian Kuna' },
-                { code: 'RUB', name: 'Russian Ruble' },
-                { code: 'TRY', name: 'Turkish Lira' },
-                { code: 'BRL', name: 'Brazilian Real' },
-                { code: 'MXN', name: 'Mexican Peso' },
-                { code: 'ARS', name: 'Argentine Peso' },
-                { code: 'CLP', name: 'Chilean Peso' },
-                { code: 'COP', name: 'Colombian Peso' },
-                { code: 'PEN', name: 'Peruvian Sol' },
-                { code: 'UYU', name: 'Uruguayan Peso' },
-                { code: 'VEF', name: 'Venezuelan Bolívar' },
-                { code: 'NGN', name: 'Nigerian Naira' },
-                { code: 'ZAR', name: 'South African Rand' },
-                { code: 'EGP', name: 'Egyptian Pound' },
-                { code: 'MAD', name: 'Moroccan Dirham' },
-                { code: 'TND', name: 'Tunisian Dinar' },
-                { code: 'DZD', name: 'Algerian Dinar' },
-                { code: 'LYD', name: 'Libyan Dinar' },
-                { code: 'KES', name: 'Kenyan Shilling' },
-                { code: 'UGX', name: 'Ugandan Shilling' },
-                { code: 'TZS', name: 'Tanzanian Shilling' },
-                { code: 'ETB', name: 'Ethiopian Birr' },
-                { code: 'GHS', name: 'Ghanaian Cedi' },
-                { code: 'XOF', name: 'West African CFA Franc' },
-                { code: 'XAF', name: 'Central African CFA Franc' },
-                { code: 'INR', name: 'Indian Rupee' },
-                { code: 'PKR', name: 'Pakistani Rupee' },
-                { code: 'BDT', name: 'Bangladeshi Taka' },
-                { code: 'LKR', name: 'Sri Lankan Rupee' },
-                { code: 'NPR', name: 'Nepalese Rupee' },
-                { code: 'THB', name: 'Thai Baht' },
-                { code: 'VND', name: 'Vietnamese Dong' },
-                { code: 'IDR', name: 'Indonesian Rupiah' },
-                { code: 'MYR', name: 'Malaysian Ringgit' },
-                { code: 'SGD', name: 'Singapore Dollar' },
-                { code: 'HKD', name: 'Hong Kong Dollar' },
-                { code: 'TWD', name: 'Taiwan Dollar' },
-                { code: 'KRW', name: 'South Korean Won' },
-                { code: 'PHP', name: 'Philippine Peso' },
-                { code: 'ILS', name: 'Israeli Shekel' },
-                { code: 'AED', name: 'UAE Dirham' },
-                { code: 'SAR', name: 'Saudi Riyal' },
-                { code: 'QAR', name: 'Qatari Riyal' },
-                { code: 'KWD', name: 'Kuwaiti Dinar' },
-                { code: 'BHD', name: 'Bahraini Dinar' },
-                { code: 'OMR', name: 'Omani Rial' },
-                { code: 'JOD', name: 'Jordanian Dinar' },
-                { code: 'LBP', name: 'Lebanese Pound' },
-                { code: 'IRR', name: 'Iranian Rial' },
-                { code: 'IQD', name: 'Iraqi Dinar' },
-                { code: 'AFN', name: 'Afghan Afghani' },
-                { code: 'UZS', name: 'Uzbekistani Som' },
-                { code: 'KZT', name: 'Kazakhstani Tenge' },
-                { code: 'GEL', name: 'Georgian Lari' },
-                { code: 'ARM', name: 'Armenian Dram' },
-                { code: 'AZN', name: 'Azerbaijani Manat' },
-                { code: 'BYN', name: 'Belarusian Ruble' },
-                { code: 'MDL', name: 'Moldovan Leu' },
-                { code: 'UAH', name: 'Ukrainian Hryvnia' },
-                { code: 'KGS', name: 'Kyrgyzstani Som' },
-                { code: 'TJS', name: 'Tajikistani Somoni' },
-                { code: 'TMT', name: 'Turkmenistani Manat' },
-                { code: 'MNT', name: 'Mongolian Tögrög' },
-                { code: 'LAK', name: 'Lao Kip' },
-                { code: 'KHR', name: 'Cambodian Riel' },
-                { code: 'MMK', name: 'Myanmar Kyat' },
-                { code: 'BND', name: 'Brunei Dollar' },
-                { code: 'MVR', name: 'Maldivian Rufiyaa' },
-                { code: 'BTN', name: 'Bhutanese Ngultrum' },
-                { code: 'MOP', name: 'Macanese Pataca' },
-                { code: 'FJD', name: 'Fijian Dollar' },
-                { code: 'WST', name: 'Samoan Tālā' },
-                { code: 'TOP', name: 'Tongan Paʻanga' },
-                { code: 'VUV', name: 'Vanuatu Vatu' },
-                { code: 'SBD', name: 'Solomon Islands Dollar' },
-                { code: 'PGK', name: 'Papua New Guinean Kina' },
-                { code: 'NZD', name: 'New Zealand Dollar' }
-            ];
+            let options = [];
             
-            // Add cryptos
-            const cryptos = [
-                { code: 'bitcoin', name: 'Bitcoin (BTC)' },
-                { code: 'ethereum', name: 'Ethereum (ETH)' },
-                { code: 'cardano', name: 'Cardano (ADA)' },
-                { code: 'solana', name: 'Solana (SOL)' },
-                { code: 'binancecoin', name: 'Binance Coin (BNB)' },
-                { code: 'ripple', name: 'Ripple (XRP)' },
-                { code: 'polkadot', name: 'Polkadot (DOT)' },
-                { code: 'dogecoin', name: 'Dogecoin (DOGE)' },
-                { code: 'avalanche-2', name: 'Avalanche (AVAX)' },
-                { code: 'polygon', name: 'Polygon (MATIC)' },
-                { code: 'chainlink', name: 'Chainlink (LINK)' },
-                { code: 'uniswap', name: 'Uniswap (UNI)' },
-                { code: 'litecoin', name: 'Litecoin (LTC)' },
-                { code: 'bitcoin-cash', name: 'Bitcoin Cash (BCH)' },
-                { code: 'stellar', name: 'Stellar (XLM)' },
-                { code: 'vechain', name: 'VeChain (VET)' },
-                { code: 'filecoin', name: 'Filecoin (FIL)' },
-                { code: 'cosmos', name: 'Cosmos (ATOM)' },
-                { code: 'monero', name: 'Monero (XMR)' },
-                { code: 'algorand', name: 'Algorand (ALGO)' },
-                { code: 'tezos', name: 'Tezos (XTZ)' },
-                { code: 'aave', name: 'Aave (AAVE)' },
-                { code: 'compound', name: 'Compound (COMP)' },
-                { code: 'sushi', name: 'SushiSwap (SUSHI)' },
-                { code: 'pancakeswap-token', name: 'PancakeSwap (CAKE)' },
-                { code: 'curve-dao-token', name: 'Curve DAO (CRV)' },
-                { code: 'yearn-finance', name: 'Yearn Finance (YFI)' },
-                { code: 'synthetix-network-token', name: 'Synthetix (SNX)' },
-                { code: '0x', name: '0x Protocol (ZRX)' },
-                { code: 'balancer', name: 'Balancer (BAL)' },
-                { code: '1inch', name: '1inch (1INCH)' },
-                { code: 'dash', name: 'Dash (DASH)' },
-                { code: 'zcash', name: 'Zcash (ZEC)' },
-                { code: 'nem', name: 'NEM (XEM)' },
-                { code: 'iota', name: 'IOTA (MIOTA)' },
-                { code: 'neo', name: 'Neo (NEO)' },
-                { code: 'qtum', name: 'Qtum (QTUM)' },
-                { code: 'waves', name: 'Waves (WAVES)' },
-                { code: 'nano', name: 'Nano (XNO)' },
-                { code: 'icon', name: 'ICON (ICX)' },
-                { code: 'ontology', name: 'Ontology (ONT)' },
-                { code: 'zilliqa', name: 'Zilliqa (ZIL)' },
-                { code: 'harmony', name: 'Harmony (ONE)' },
-                { code: 'elrond-erd-2', name: 'Elrond (EGLD)' },
-                { code: 'near', name: 'NEAR Protocol (NEAR)' },
-                { code: 'fantom', name: 'Fantom (FTM)' },
-                { code: 'the-graph', name: 'The Graph (GRT)' },
-                { code: 'decentraland', name: 'Decentraland (MANA)' },
-                { code: 'sandbox', name: 'The Sandbox (SAND)' },
-                { code: 'enjincoin', name: 'Enjin Coin (ENJ)' },
-                { code: 'axie-infinity', name: 'Axie Infinity (AXS)' },
-                { code: 'gala', name: 'Gala (GALA)' },
-                { code: 'chiliz', name: 'Chiliz (CHZ)' },
-                { code: 'flow', name: 'Flow (FLOW)' },
-                { code: 'internet-computer', name: 'Internet Computer (ICP)' },
-                { code: 'theta-token', name: 'Theta Token (THETA)' },
-                { code: 'vega-protocol', name: 'Vega Protocol (VEGA)' },
-                { code: 'celo', name: 'Celo (CELO)' },
-                { code: 'kusama', name: 'Kusama (KSM)' },
-                { code: 'eos', name: 'EOS (EOS)' },
-                { code: 'tron', name: 'TRON (TRX)' },
-                { code: 'bitcoin-sv', name: 'Bitcoin SV (BSV)' }
-            ];
+            if (type === 'currency') {
+                // Currency only options
+                options = this.getCurrencyOptions();
+            } else if (type === 'crypto') {
+                // Crypto only options
+                options = this.getCryptoOptions();
+            } else {
+                // Combined options for custom alerts
+                options = [
+                    ...this.getCurrencyOptions(),
+                    ...this.getCryptoOptions()
+                ];
+            }
             
-            // Combine currencies and cryptos
-            const allOptions = [...currencies, ...cryptos];
-            
-            // Add to both dropdowns
-            allOptions.forEach(option => {
+            // Add currencies to both dropdowns
+            options.forEach(option => {
                 const fromOption = document.createElement('option');
-                fromOption.value = option.code;
-                fromOption.textContent = option.name;
+                fromOption.value = option.value;
+                fromOption.textContent = option.text;
                 fromCurrencySelect.appendChild(fromOption);
                 
                 const toOption = document.createElement('option');
-                toOption.value = option.code;
-                toOption.textContent = option.name;
+                toOption.value = option.value;
+                toOption.textContent = option.text;
                 toCurrencySelect.appendChild(toOption);
             });
             
-            // Set default values
-            fromCurrencySelect.value = 'USD';
-            toCurrencySelect.value = 'EUR';
+            // Set default values based on type
+            if (type === 'currency') {
+                fromCurrencySelect.value = 'USD';
+                toCurrencySelect.value = 'EUR';
+            } else if (type === 'crypto') {
+                fromCurrencySelect.value = 'bitcoin';
+                toCurrencySelect.value = 'usd';
+            } else {
+                fromCurrencySelect.value = 'USD';
+                toCurrencySelect.value = 'EUR';
+            }
+            
+            // Make dropdowns searchable
+            this.makeDropdownSearchable(fromCurrencySelect, options);
+            this.makeDropdownSearchable(toCurrencySelect, options);
         }
     }
 
@@ -918,8 +690,8 @@ class RateRadar {
                         },
                         {
                             id: 'sample2',
-                            fromCurrency: 'BTC',
-                            toCurrency: 'USD',
+                            fromCurrency: 'bitcoin',
+                            toCurrency: 'usd',
                             fromAmount: 1,
                             toAmount: 45000,
                             rate: '$45,000',
@@ -929,8 +701,8 @@ class RateRadar {
                         },
                         {
                             id: 'sample3',
-                            fromCurrency: 'ETH',
-                            toCurrency: 'USD',
+                            fromCurrency: 'ethereum',
+                            toCurrency: 'usd',
                             fromAmount: 1,
                             toAmount: 3200,
                             rate: '$3,200',
@@ -956,6 +728,7 @@ class RateRadar {
                                 <div class="favorite-title">${favorite.fromCurrency} → ${favorite.toCurrency}</div>
                                 <div class="favorite-details">${favorite.type === 'crypto' ? 'Cryptocurrency' : 'Currency'} Pair</div>
                                 <div class="favorite-rate">${favorite.rate}</div>
+                                ${favorite.isSample ? '<div class="sample-badge">Sample</div>' : ''}
                             </div>
                             <div class="favorite-actions">
                                 <button class="use-favorite-btn" data-favorite-id="${favorite.id}">Use</button>
@@ -1060,7 +833,7 @@ class RateRadar {
             const result = await chrome.storage.sync.get(['favorites']);
             let favorites = result.favorites || [];
             
-            // Remove the favorite
+            // Remove the favorite (including sample favorites)
             favorites = favorites.filter(fav => fav.id !== favoriteId);
             
             // Save updated favorites
@@ -1093,12 +866,13 @@ class RateRadar {
                             status: 'active',
                             condition: 'above',
                             target: 50000,
-                            fromCurrency: 'BTC',
-                            toCurrency: 'USD',
+                            fromCurrency: 'bitcoin',
+                            toCurrency: 'usd',
                             targetRate: 50000,
                             description: 'Bitcoin above $50,000',
                             createdAt: new Date().toISOString(),
-                            isSample: true
+                            isSample: true,
+                            type: 'crypto'
                         },
                         {
                             id: 'sample2',
@@ -1112,7 +886,23 @@ class RateRadar {
                             targetRate: 0.85,
                             description: 'Euro below 0.85 USD',
                             createdAt: new Date().toISOString(),
-                            isSample: true
+                            isSample: true,
+                            type: 'currency'
+                        },
+                        {
+                            id: 'sample3',
+                            title: 'ETH to BTC Alert',
+                            details: 'Ethereum above 0.05 BTC',
+                            status: 'active',
+                            condition: 'above',
+                            target: 0.05,
+                            fromCurrency: 'ethereum',
+                            toCurrency: 'bitcoin',
+                            targetRate: 0.05,
+                            description: 'Ethereum above 0.05 BTC',
+                            createdAt: new Date().toISOString(),
+                            isSample: true,
+                            type: 'crypto'
                         }
                     ];
                 }
@@ -1130,7 +920,10 @@ class RateRadar {
                         <div class="alert-item" data-alert-id="${alert.id}">
                             <div class="alert-info">
                                 <div class="alert-title">${alert.description || `${alert.fromCurrency} to ${alert.toCurrency}`}</div>
-                                <div class="alert-details">${alert.fromCurrency} ${alert.condition} ${alert.targetRate} ${alert.toCurrency}</div>
+                                <div class="alert-details">
+                                    ${alert.fromCurrency} ${alert.condition} ${alert.targetRate} ${alert.toCurrency}
+                                    <span class="alert-type ${alert.type || 'currency'}">${alert.type || 'currency'}</span>
+                                </div>
                                 <div class="alert-status ${alert.status}">${alert.status.toUpperCase()}</div>
                             </div>
                             <div class="alert-actions">
@@ -1339,34 +1132,197 @@ class RateRadar {
 
     async getCryptoPrice(cryptoId, targetCurrency = 'usd') {
         try {
-            // Handle different crypto IDs
-            const cryptoMapping = {
+            // Map common crypto names to CoinGecko IDs
+            const cryptoMap = {
                 'bitcoin': 'bitcoin',
                 'btc': 'bitcoin',
                 'ethereum': 'ethereum',
                 'eth': 'ethereum',
+                'binancecoin': 'binancecoin',
+                'bnb': 'binancecoin',
                 'cardano': 'cardano',
                 'ada': 'cardano',
                 'solana': 'solana',
                 'sol': 'solana',
-                'binancecoin': 'binancecoin',
-                'bnb': 'binancecoin',
                 'ripple': 'ripple',
                 'xrp': 'ripple',
                 'polkadot': 'polkadot',
                 'dot': 'polkadot',
                 'dogecoin': 'dogecoin',
-                'doge': 'dogecoin'
+                'doge': 'dogecoin',
+                'avalanche-2': 'avalanche-2',
+                'avax': 'avalanche-2',
+                'chainlink': 'chainlink',
+                'link': 'chainlink',
+                'matic-network': 'matic-network',
+                'matic': 'matic-network',
+                'litecoin': 'litecoin',
+                'ltc': 'litecoin',
+                'uniswap': 'uniswap',
+                'uni': 'uniswap',
+                'stellar': 'stellar',
+                'xlm': 'stellar',
+                'vechain': 'vechain',
+                'vet': 'vechain',
+                'filecoin': 'filecoin',
+                'fil': 'filecoin',
+                'tron': 'tron',
+                'trx': 'tron',
+                'monero': 'monero',
+                'xmr': 'monero',
+                'eos': 'eos',
+                'aave': 'aave',
+                'algorand': 'algorand',
+                'algo': 'algorand',
+                'tezos': 'tezos',
+                'xtz': 'tezos',
+                'cosmos': 'cosmos',
+                'atom': 'cosmos',
+                'neo': 'neo',
+                'dash': 'dash',
+                'zcash': 'zcash',
+                'zec': 'zcash',
+                'bitcoin-cash': 'bitcoin-cash',
+                'bch': 'bitcoin-cash',
+                'iota': 'iota',
+                'miota': 'iota',
+                'nem': 'nem',
+                'xem': 'nem',
+                'waves': 'waves',
+                'decred': 'decred',
+                'dcr': 'decred',
+                'qtum': 'qtum',
+                'omisego': 'omisego',
+                'omg': 'omisego',
+                'icon': 'icon',
+                'icx': 'icon',
+                'zilliqa': 'zilliqa',
+                'zil': 'zilliqa',
+                '0x': '0x',
+                'zrx': '0x',
+                'basic-attention-token': 'basic-attention-token',
+                'bat': 'basic-attention-token',
+                'augur': 'augur',
+                'rep': 'augur',
+                'golem': 'golem',
+                'gnt': 'golem',
+                'siacoin': 'siacoin',
+                'sc': 'siacoin',
+                'digibyte': 'digibyte',
+                'dgb': 'digibyte',
+                'verge': 'verge',
+                'xvg': 'verge',
+                'steem': 'steem',
+                'pivx': 'pivx',
+                'komodo': 'komodo',
+                'kmd': 'komodo',
+                'ardor': 'ardor',
+                'ardr': 'ardor',
+                'stratis': 'stratis',
+                'strat': 'stratis',
+                'nxt': 'nxt',
+                'factom': 'factom',
+                'fct': 'factom',
+                'maidsafecoin': 'maidsafecoin',
+                'maid': 'maidsafecoin',
+                'peercoin': 'peercoin',
+                'ppc': 'peercoin',
+                'namecoin': 'namecoin',
+                'nmc': 'namecoin',
+                'feathercoin': 'feathercoin',
+                'ftc': 'feathercoin',
+                'novacoin': 'novacoin',
+                'nvc': 'novacoin',
+                'primecoin': 'primecoin',
+                'xpm': 'primecoin',
+                'gridcoin': 'gridcoin',
+                'grc': 'gridcoin',
+                'vertcoin': 'vertcoin',
+                'vtc': 'vertcoin',
+                'potcoin': 'potcoin',
+                'pot': 'potcoin',
+                'megacoin': 'megacoin',
+                'mec': 'megacoin',
+                'auroracoin': 'auroracoin',
+                'aur': 'auroracoin',
+                'reddcoin': 'reddcoin',
+                'rdd': 'reddcoin',
+                'blackcoin': 'blackcoin',
+                'blk': 'blackcoin',
+                'nushares': 'nushares',
+                'nsr': 'nushares',
+                'nubits': 'nubits',
+                'usnbt': 'nubits',
+                'mazacoin': 'mazacoin',
+                'mzc': 'mazacoin',
+                'burst': 'burst',
+                'counterparty': 'counterparty',
+                'xcp': 'counterparty',
+                'omni': 'omni',
+                'mastercoin': 'omni',
+                'msc': 'omni',
+                'bitshares': 'bitshares',
+                'bts': 'bitshares',
+                'zcoin': 'zcoin',
+                'xzc': 'zcoin',
+                'zencash': 'zencash',
+                'zen': 'zencash',
+                'horizen': 'horizen',
+                'aeon': 'aeon',
+                'sumokoin': 'sumokoin',
+                'sumo': 'sumokoin',
+                'masari': 'masari',
+                'msr': 'masari',
+                'turtlecoin': 'turtlecoin',
+                'trtl': 'turtlecoin',
+                'karbo': 'karbo',
+                'krb': 'karbo',
+                'haven': 'haven',
+                'xhv': 'haven',
+                'loki-network': 'loki-network',
+                'wownero': 'wownero',
+                'wow': 'wownero',
+                'ryo-currency': 'ryo-currency',
+                'lethean': 'lethean',
+                'lthn': 'lethean',
+                'dero': 'dero',
+                'graft': 'graft',
+                'grft': 'graft',
+                'stellite': 'stellite',
+                'xla': 'stellite',
+                'triton': 'triton',
+                'xeq': 'triton',
+                'conceal': 'conceal',
+                'ccx': 'conceal',
+                'plenteum': 'plenteum',
+                'pltx': 'plenteum',
+                'italocoin': 'italocoin',
+                'ita': 'italocoin',
+                'dinastycoin': 'dinastycoin',
+                'dcy': 'dinastycoin',
+                'bitcoin-private': 'bitcoin-private',
+                'btcp': 'bitcoin-private',
+                'bitcoin-gold': 'bitcoin-gold',
+                'btg': 'bitcoin-gold',
+                'bitcoin-diamond': 'bitcoin-diamond',
+                'bcd': 'bitcoin-diamond',
+                'bitcoin-cash-abc': 'bitcoin-cash-abc',
+                'bcha': 'bitcoin-cash-abc',
+                'bitcoin-sv': 'bitcoin-sv',
+                'bsv': 'bitcoin-sv',
+                'ethereum-classic': 'ethereum-classic',
+                'etc': 'ethereum-classic'
             };
             
-            const mappedCryptoId = cryptoMapping[cryptoId] || cryptoId;
+            // Get the correct CoinGecko ID
+            const coinGeckoId = cryptoMap[cryptoId.toLowerCase()] || cryptoId.toLowerCase();
             
-            const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${mappedCryptoId}&vs_currencies=${targetCurrency}&include_24hr_change=true`);
+            const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=${targetCurrency}&include_24hr_change=true`);
             
             if (response.ok) {
                 const data = await response.json();
-                if (data[mappedCryptoId] && data[mappedCryptoId][targetCurrency]) {
-                    return data[mappedCryptoId][targetCurrency];
+                if (data[coinGeckoId] && data[coinGeckoId][targetCurrency]) {
+                    return data[coinGeckoId][targetCurrency];
                 }
             }
             
@@ -1408,6 +1364,337 @@ class RateRadar {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
+    }
+
+    makeDropdownSearchable(selectElement, options) {
+        // Check if already converted
+        if (selectElement.parentNode.querySelector('.searchable-dropdown-wrapper')) {
+            return;
+        }
+        
+        // Create a wrapper div
+        const wrapper = document.createElement('div');
+        wrapper.className = 'searchable-dropdown-wrapper';
+        wrapper.style.cssText = `
+            position: relative;
+            width: 100%;
+        `;
+        
+        // Create search input
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'searchable-dropdown-input';
+        searchInput.placeholder = 'Type to search...';
+        searchInput.style.cssText = `
+            width: 100%;
+            padding: 12px 32px 12px 16px;
+            border: 2px solid var(--input-border);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--input-text);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        `;
+        
+        // Create dropdown list
+        const dropdownList = document.createElement('div');
+        dropdownList.className = 'searchable-dropdown-list';
+        dropdownList.style.cssText = `
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--dropdown-bg);
+            border: 1px solid var(--dropdown-border);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px var(--shadow-color);
+        `;
+        
+        // Insert wrapper before select
+        selectElement.parentNode.insertBefore(wrapper, selectElement);
+        wrapper.appendChild(searchInput);
+        wrapper.appendChild(dropdownList);
+        wrapper.appendChild(selectElement);
+        
+        // Hide original select
+        selectElement.style.display = 'none';
+        
+        // Show current value in search input
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        if (selectedOption) {
+            searchInput.value = selectedOption.textContent;
+        }
+        
+        // Handle click on search input
+        searchInput.addEventListener('click', () => {
+            dropdownList.style.display = 'block';
+            searchInput.focus();
+            this.populateDropdownList(dropdownList, options, searchInput.value);
+        });
+        
+        // Handle search input
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            this.populateDropdownList(dropdownList, options, searchTerm);
+        });
+        
+        // Handle focus out
+        searchInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                dropdownList.style.display = 'none';
+            }, 200);
+        });
+        
+        // Handle dropdown item selection
+        dropdownList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('dropdown-item')) {
+                const value = e.target.dataset.value;
+                const text = e.target.textContent;
+                
+                // Update select element
+                selectElement.value = value;
+                selectElement.dispatchEvent(new Event('change'));
+                
+                // Update search input with centered text
+                searchInput.value = text;
+                searchInput.style.textAlign = 'center';
+                
+                // Hide dropdown
+                dropdownList.style.display = 'none';
+            }
+        });
+        
+        // Handle escape key
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                dropdownList.style.display = 'none';
+                searchInput.blur();
+            }
+        });
+    }
+
+    populateDropdownList(dropdownList, options, searchTerm) {
+        const filteredOptions = options.filter(option => 
+            option.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            option.value.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        
+        dropdownList.innerHTML = filteredOptions.map(option => `
+            <div class="dropdown-item" data-value="${option.value}" style="
+                padding: 8px 12px;
+                cursor: pointer;
+                border-bottom: 1px solid var(--border-color);
+                transition: background 0.2s ease;
+            " onmouseover="this.style.background='var(--dropdown-hover)'" onmouseout="this.style.background='transparent'">
+                ${option.text}
+            </div>
+        `).join('');
+    }
+
+    getCurrencyOptions() {
+        return [
+            { value: 'USD', text: 'USD - US Dollar' },
+            { value: 'EUR', text: 'EUR - Euro' },
+            { value: 'GBP', text: 'GBP - British Pound' },
+            { value: 'JPY', text: 'JPY - Japanese Yen' },
+            { value: 'CNY', text: 'CNY - Chinese Yuan' },
+            { value: 'CAD', text: 'CAD - Canadian Dollar' },
+            { value: 'AUD', text: 'AUD - Australian Dollar' },
+            { value: 'CHF', text: 'CHF - Swiss Franc' },
+            { value: 'SEK', text: 'SEK - Swedish Krona' },
+            { value: 'NOK', text: 'NOK - Norwegian Krone' },
+            { value: 'DKK', text: 'DKK - Danish Krone' },
+            { value: 'PLN', text: 'PLN - Polish Złoty' },
+            { value: 'CZK', text: 'CZK - Czech Koruna' },
+            { value: 'HUF', text: 'HUF - Hungarian Forint' },
+            { value: 'RON', text: 'RON - Romanian Leu' },
+            { value: 'BGN', text: 'BGN - Bulgarian Lev' },
+            { value: 'HRK', text: 'HRK - Croatian Kuna' },
+            { value: 'RUB', text: 'RUB - Russian Ruble' },
+            { value: 'TRY', text: 'TRY - Turkish Lira' },
+            { value: 'BRL', text: 'BRL - Brazilian Real' },
+            { value: 'MXN', text: 'MXN - Mexican Peso' },
+            { value: 'ARS', text: 'ARS - Argentine Peso' },
+            { value: 'CLP', text: 'CLP - Chilean Peso' },
+            { value: 'COP', text: 'COP - Colombian Peso' },
+            { value: 'PEN', text: 'PEN - Peruvian Sol' },
+            { value: 'UYU', text: 'UYU - Uruguayan Peso' },
+            { value: 'VEF', text: 'VEF - Venezuelan Bolívar' },
+            { value: 'NGN', text: 'NGN - Nigerian Naira' },
+            { value: 'ZAR', text: 'ZAR - South African Rand' },
+            { value: 'EGP', text: 'EGP - Egyptian Pound' },
+            { value: 'MAD', text: 'MAD - Moroccan Dirham' },
+            { value: 'TND', text: 'TND - Tunisian Dinar' },
+            { value: 'DZD', text: 'DZD - Algerian Dinar' },
+            { value: 'LYD', text: 'LYD - Libyan Dinar' },
+            { value: 'KES', text: 'KES - Kenyan Shilling' },
+            { value: 'UGX', text: 'UGX - Ugandan Shilling' },
+            { value: 'TZS', text: 'TZS - Tanzanian Shilling' },
+            { value: 'ETB', text: 'ETB - Ethiopian Birr' },
+            { value: 'GHS', text: 'GHS - Ghanaian Cedi' },
+            { value: 'XOF', text: 'XOF - West African CFA Franc' },
+            { value: 'XAF', text: 'XAF - Central African CFA Franc' },
+            { value: 'INR', text: 'INR - Indian Rupee' },
+            { value: 'PKR', text: 'PKR - Pakistani Rupee' },
+            { value: 'BDT', text: 'BDT - Bangladeshi Taka' },
+            { value: 'LKR', text: 'LKR - Sri Lankan Rupee' },
+            { value: 'NPR', text: 'NPR - Nepalese Rupee' },
+            { value: 'THB', text: 'THB - Thai Baht' },
+            { value: 'VND', text: 'VND - Vietnamese Dong' },
+            { value: 'IDR', text: 'IDR - Indonesian Rupiah' },
+            { value: 'MYR', text: 'MYR - Malaysian Ringgit' },
+            { value: 'SGD', text: 'SGD - Singapore Dollar' },
+            { value: 'HKD', text: 'HKD - Hong Kong Dollar' },
+            { value: 'TWD', text: 'TWD - Taiwan Dollar' },
+            { value: 'KRW', text: 'KRW - South Korean Won' },
+            { value: 'PHP', text: 'PHP - Philippine Peso' },
+            { value: 'ILS', text: 'ILS - Israeli Shekel' },
+            { value: 'AED', text: 'AED - UAE Dirham' },
+            { value: 'SAR', text: 'SAR - Saudi Riyal' },
+            { value: 'QAR', text: 'QAR - Qatari Riyal' },
+            { value: 'KWD', text: 'KWD - Kuwaiti Dinar' },
+            { value: 'BHD', text: 'BHD - Bahraini Dinar' },
+            { value: 'OMR', text: 'OMR - Omani Rial' },
+            { value: 'JOD', text: 'JOD - Jordanian Dinar' },
+            { value: 'LBP', text: 'LBP - Lebanese Pound' },
+            { value: 'IRR', text: 'IRR - Iranian Rial' },
+            { value: 'IQD', text: 'IQD - Iraqi Dinar' },
+            { value: 'AFN', text: 'AFN - Afghan Afghani' },
+            { value: 'UZS', text: 'UZS - Uzbekistani Som' },
+            { value: 'KZT', text: 'KZT - Kazakhstani Tenge' },
+            { value: 'GEL', text: 'GEL - Georgian Lari' },
+            { value: 'ARM', text: 'ARM - Armenian Dram' },
+            { value: 'AZN', text: 'AZN - Azerbaijani Manat' },
+            { value: 'BYN', text: 'BYN - Belarusian Ruble' },
+            { value: 'MDL', text: 'MDL - Moldovan Leu' },
+            { value: 'UAH', text: 'UAH - Ukrainian Hryvnia' },
+            { value: 'KGS', text: 'KGS - Kyrgyzstani Som' },
+            { value: 'TJS', text: 'TJS - Tajikistani Somoni' },
+            { value: 'TMT', text: 'TMT - Turkmenistani Manat' },
+            { value: 'MNT', text: 'MNT - Mongolian Tögrög' },
+            { value: 'LAK', text: 'LAK - Lao Kip' },
+            { value: 'KHR', text: 'KHR - Cambodian Riel' },
+            { value: 'MMK', text: 'MMK - Myanmar Kyat' },
+            { value: 'BND', text: 'BND - Brunei Dollar' },
+            { value: 'MVR', text: 'MVR - Maldivian Rufiyaa' },
+            { value: 'BTN', text: 'BTN - Bhutanese Ngultrum' },
+            { value: 'MOP', text: 'MOP - Macanese Pataca' },
+            { value: 'FJD', text: 'FJD - Fijian Dollar' },
+            { value: 'WST', text: 'WST - Samoan Tālā' },
+            { value: 'TOP', text: 'TOP - Tongan Paʻanga' },
+            { value: 'VUV', text: 'VUV - Vanuatu Vatu' },
+            { value: 'SBD', text: 'SBD - Solomon Islands Dollar' },
+            { value: 'PGK', text: 'PGK - Papua New Guinean Kina' },
+            { value: 'NZD', text: 'NZD - New Zealand Dollar' }
+        ];
+    }
+
+    getCryptoOptions() {
+        return [
+            { value: 'bitcoin', text: 'Bitcoin (BTC)' },
+            { value: 'ethereum', text: 'Ethereum (ETH)' },
+            { value: 'binancecoin', text: 'Binance Coin (BNB)' },
+            { value: 'cardano', text: 'Cardano (ADA)' },
+            { value: 'solana', text: 'Solana (SOL)' },
+            { value: 'ripple', text: 'Ripple (XRP)' },
+            { value: 'polkadot', text: 'Polkadot (DOT)' },
+            { value: 'dogecoin', text: 'Dogecoin (DOGE)' },
+            { value: 'avalanche-2', text: 'Avalanche (AVAX)' },
+            { value: 'chainlink', text: 'Chainlink (LINK)' },
+            { value: 'matic-network', text: 'Polygon (MATIC)' },
+            { value: 'litecoin', text: 'Litecoin (LTC)' },
+            { value: 'uniswap', text: 'Uniswap (UNI)' },
+            { value: 'stellar', text: 'Stellar (XLM)' },
+            { value: 'vechain', text: 'VeChain (VET)' },
+            { value: 'filecoin', text: 'Filecoin (FIL)' },
+            { value: 'tron', text: 'TRON (TRX)' },
+            { value: 'monero', text: 'Monero (XMR)' },
+            { value: 'eos', text: 'EOS (EOS)' },
+            { value: 'aave', text: 'Aave (AAVE)' },
+            { value: 'algorand', text: 'Algorand (ALGO)' },
+            { value: 'tezos', text: 'Tezos (XTZ)' },
+            { value: 'cosmos', text: 'Cosmos (ATOM)' },
+            { value: 'neo', text: 'Neo (NEO)' },
+            { value: 'dash', text: 'Dash (DASH)' },
+            { value: 'zcash', text: 'Zcash (ZEC)' },
+            { value: 'bitcoin-cash', text: 'Bitcoin Cash (BCH)' },
+            { value: 'ethereum-classic', text: 'Ethereum Classic (ETC)' },
+            { value: 'iota', text: 'IOTA (MIOTA)' },
+            { value: 'nem', text: 'NEM (XEM)' },
+            { value: 'waves', text: 'Waves (WAVES)' },
+            { value: 'decred', text: 'Decred (DCR)' },
+            { value: 'qtum', text: 'Qtum (QTUM)' },
+            { value: 'omisego', text: 'OMG Network (OMG)' },
+            { value: 'icon', text: 'ICON (ICX)' },
+            { value: 'zilliqa', text: 'Zilliqa (ZIL)' },
+            { value: '0x', text: '0x (ZRX)' },
+            { value: 'basic-attention-token', text: 'Basic Attention Token (BAT)' },
+            { value: 'augur', text: 'Augur (REP)' },
+            { value: 'golem', text: 'Golem (GNT)' },
+            { value: 'siacoin', text: 'Siacoin (SC)' },
+            { value: 'digibyte', text: 'DigiByte (DGB)' },
+            { value: 'verge', text: 'Verge (XVG)' },
+            { value: 'steem', text: 'Steem (STEEM)' },
+            { value: 'pivx', text: 'PIVX (PIVX)' },
+            { value: 'komodo', text: 'Komodo (KMD)' },
+            { value: 'ardor', text: 'Ardor (ARDR)' },
+            { value: 'stratis', text: 'Stratis (STRAT)' },
+            { value: 'nxt', text: 'Nxt (NXT)' },
+            { value: 'factom', text: 'Factom (FCT)' },
+            { value: 'maidsafecoin', text: 'MaidSafeCoin (MAID)' },
+            { value: 'peercoin', text: 'Peercoin (PPC)' },
+            { value: 'namecoin', text: 'Namecoin (NMC)' },
+            { value: 'feathercoin', text: 'Feathercoin (FTC)' },
+            { value: 'novacoin', text: 'Novacoin (NVC)' },
+            { value: 'primecoin', text: 'Primecoin (XPM)' },
+            { value: 'gridcoin', text: 'Gridcoin (GRC)' },
+            { value: 'vertcoin', text: 'Vertcoin (VTC)' },
+            { value: 'potcoin', text: 'PotCoin (POT)' },
+            { value: 'megacoin', text: 'Megacoin (MEC)' },
+            { value: 'auroracoin', text: 'Auroracoin (AUR)' },
+            { value: 'reddcoin', text: 'Reddcoin (RDD)' },
+            { value: 'blackcoin', text: 'Blackcoin (BLK)' },
+            { value: 'nushares', text: 'NuShares (NSR)' },
+            { value: 'nubits', text: 'NuBits (USNBT)' },
+            { value: 'mazacoin', text: 'Mazacoin (MZC)' },
+            { value: 'burst', text: 'Burst (BURST)' },
+            { value: 'counterparty', text: 'Counterparty (XCP)' },
+            { value: 'omni', text: 'Omni (OMNI)' },
+            { value: 'bitshares', text: 'BitShares (BTS)' },
+            { value: 'zcoin', text: 'Zcoin (XZC)' },
+            { value: 'zencash', text: 'Zencash (ZEN)' },
+            { value: 'horizen', text: 'Horizen (ZEN)' },
+            { value: 'aeon', text: 'Aeon (AEON)' },
+            { value: 'sumokoin', text: 'Sumokoin (SUMO)' },
+            { value: 'masari', text: 'Masari (MSR)' },
+            { value: 'turtlecoin', text: 'TurtleCoin (TRTL)' },
+            { value: 'karbo', text: 'Karbo (KRB)' },
+            { value: 'haven', text: 'Haven (XHV)' },
+            { value: 'loki-network', text: 'Loki Network (LOKI)' },
+            { value: 'wownero', text: 'Wownero (WOW)' },
+            { value: 'ryo-currency', text: 'Ryo Currency (RYO)' },
+            { value: 'lethean', text: 'Lethean (LTHN)' },
+            { value: 'dero', text: 'Dero (DERO)' },
+            { value: 'graft', text: 'Graft (GRFT)' },
+            { value: 'stellite', text: 'Stellite (XLA)' },
+            { value: 'triton', text: 'Triton (XEQ)' },
+            { value: 'conceal', text: 'Conceal (CCX)' },
+            { value: 'plenteum', text: 'Plenteum (PLTX)' },
+            { value: 'italocoin', text: 'Italocoin (ITA)' },
+            { value: 'dinastycoin', text: 'Dinastycoin (DCY)' },
+            { value: 'bitcoin-private', text: 'Bitcoin Private (BTCP)' },
+            { value: 'bitcoin-gold', text: 'Bitcoin Gold (BTG)' },
+            { value: 'bitcoin-diamond', text: 'Bitcoin Diamond (BCD)' },
+            { value: 'bitcoin-cash-abc', text: 'Bitcoin Cash ABC (BCHA)' },
+            { value: 'bitcoin-sv', text: 'Bitcoin SV (BSV)' }
+        ];
     }
 }
 

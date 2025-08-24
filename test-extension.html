@@ -24,6 +24,7 @@
             margin: 10px 0;
             border-radius: 4px;
             cursor: pointer;
+            user-select: text;
         }
         .price-example:hover {
             background: #e0e0e0;
@@ -39,6 +40,14 @@
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
+        }
+        .debug-info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -60,6 +69,12 @@
         <h3>🔍 Extension Status Check:</h3>
         <div id="extensionStatus">Checking extension status...</div>
         <button onclick="checkExtensionStatus()">Refresh Status</button>
+    </div>
+
+    <div class="debug-info">
+        <h3>🐛 Debug Information:</h3>
+        <div id="debugInfo">Waiting for extension to load...</div>
+        <button onclick="checkSmartShopping()">Test Smart Shopping</button>
     </div>
 
     <div class="test-section">
@@ -143,9 +158,36 @@
             }
         }
 
+        function checkSmartShopping() {
+            const debugDiv = document.getElementById('debugInfo');
+            
+            // Test if content script is running
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.sendMessage({ action: 'checkSmartShopping' }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        debugDiv.innerHTML = `
+                            <strong>❌ Smart Shopping:</strong> Content script not responding<br>
+                            <small>Error: ${chrome.runtime.lastError.message}</small>
+                        `;
+                    } else {
+                        debugDiv.innerHTML = `
+                            <strong>✅ Smart Shopping:</strong> Content script is running<br>
+                            <small>Response: ${JSON.stringify(response)}</small>
+                        `;
+                    }
+                });
+            } else {
+                debugDiv.innerHTML = `
+                    <strong>❌ Smart Shopping:</strong> Extension not detected<br>
+                    <small>Make sure the RateRadar extension is installed</small>
+                `;
+            }
+        }
+
         // Check status on page load
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(checkExtensionStatus, 1000);
+            setTimeout(checkSmartShopping, 2000);
         });
 
         // Add click handlers to price examples for easier testing
@@ -161,9 +203,20 @@
                     range.selectNodeContents(example);
                     selection.removeAllRanges();
                     selection.addRange(range);
+                    
+                    // Trigger mouseup event
+                    const event = new MouseEvent('mouseup', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    });
+                    example.dispatchEvent(event);
                 }
             });
         });
+
+        // Log when page loads
+        console.log('RateRadar Test Page: Page loaded, waiting for extension...');
     </script>
 </body>
 </html> 
