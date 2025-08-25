@@ -85,8 +85,9 @@ class RateRadarBackground {
                     message: 'Smart shopping is enabled' 
                 });
             } else if (message.action === 'getSettings') {
-                chrome.storage.sync.get(['smartShopping', 'baseCurrency', 'userCurrency'], (result) => {
-                    sendResponse({ success: true, settings: result });
+                chrome.storage.sync.get(['settings'], (result) => {
+                    const settings = result.settings || {};
+                    sendResponse({ success: true, settings: settings });
                 });
                 return true; // Keep message channel open for async response
             }

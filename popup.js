@@ -19,6 +19,9 @@ class RateRadar {
             // Apply theme
             this.applyTheme();
             
+            // Setup auto refresh if enabled
+            this.setupAutoRefresh();
+            
             // Perform initial conversions
             await this.performConversion();
             await this.performCryptoConversion();
@@ -27,6 +30,9 @@ class RateRadar {
             this.loadAlertsList();
             this.loadFavoritesList();
             this.loadHistoryList();
+            
+            // Setup settings sync
+            this.setupSettingsSync();
             
             console.log('RateRadar: Popup initialized successfully');
             
@@ -39,32 +45,109 @@ class RateRadar {
         try {
             const result = await chrome.storage.sync.get(['settings']);
             this.settings = result.settings || this.getDefaultSettings();
+            
+            // Apply settings immediately
+            this.applySettings();
+            
         } catch (error) {
             console.error('Error loading settings:', error);
             this.settings = this.getDefaultSettings();
+            this.applySettings();
         }
     }
 
     getDefaultSettings() {
         return {
-            baseCurrency: 'USD',
-            userCurrency: 'USD',
             theme: 'light',
             autoRefresh: true,
             refreshInterval: 5,
             notifications: true,
             soundAlerts: false,
             smartShopping: true,
+            baseCurrency: 'USD',
             decimalPlaces: 2,
+            cacheDuration: 300,
             showTrends: true,
             alertCheckInterval: 5,
             maxAlerts: 10
         };
     }
 
+    applySettings() {
+        // Apply theme
+        this.applyTheme(this.settings.theme);
+        
+        // Apply decimal places
+        this.applyDecimalPlaces();
+        
+        // Apply base currency
+        this.applyBaseCurrency();
+        
+        // Apply other settings
+        this.applyOtherSettings();
+    }
+
     applyTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        console.log('Theme applied:', theme);
+        const themeToApply = theme || this.settings.theme || 'light';
+        document.documentElement.setAttribute('data-theme', themeToApply);
+        console.log('Theme applied:', themeToApply);
+    }
+
+    applyDecimalPlaces() {
+        const decimalPlaces = this.settings.decimalPlaces || 2;
+        // Update display precision for all numeric inputs
+        const numericInputs = document.querySelectorAll('input[type="number"]');
+        numericInputs.forEach(input => {
+            input.step = `0.${'0'.repeat(decimalPlaces - 1)}1`;
+        });
+    }
+
+    applyBaseCurrency() {
+        const baseCurrency = this.settings.baseCurrency || 'USD';
+        // Update default currency selections if needed
+        const fromCurrency = document.getElementById('fromCurrency');
+        const toCurrency = document.getElementById('toCurrency');
+        
+        if (fromCurrency && !fromCurrency.value) {
+            fromCurrency.value = baseCurrency;
+        }
+        
+        if (toCurrency && !toCurrency.value) {
+            toCurrency.value = baseCurrency === 'USD' ? 'EUR' : 'USD';
+        }
+    }
+
+    applyOtherSettings() {
+        // Apply other settings as needed
+        console.log('Applied settings:', this.settings);
+    }
+
+    setupAutoRefresh() {
+        if (this.settings.autoRefresh) {
+            const interval = (this.settings.refreshInterval || 5) * 60 * 1000; // Convert to milliseconds
+            this.autoRefreshInterval = setInterval(async () => {
+                console.log('Auto refreshing rates...');
+                await this.performConversion();
+                await this.performCryptoConversion();
+            }, interval);
+        }
+    }
+
+    setupSettingsSync() {
+        // Listen for settings changes from options page
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            if (namespace === 'sync' && changes.settings) {
+                console.log('Settings changed, updating...');
+                this.settings = changes.settings.newValue || this.getDefaultSettings();
+                this.applySettings();
+                
+                // Restart auto refresh if needed
+                if (this.autoRefreshInterval) {
+                    clearInterval(this.autoRefreshInterval);
+                }
+                this.setupAutoRefresh();
+            }
+        });
     }
 
     setupUI() {
@@ -90,6 +173,13 @@ class RateRadar {
         
         if (fromAmount) {
             fromAmount.addEventListener('input', this.debounce(() => this.performConversion(), 300));
+            // Prevent invalid input
+            fromAmount.addEventListener('keypress', (e) => {
+                const char = String.fromCharCode(e.which);
+                if (!/[\d.]/.test(char) && e.which !== 8 && e.which !== 9) {
+                    e.preventDefault();
+                }
+            });
         }
         if (fromCurrency) {
             fromCurrency.addEventListener('change', () => this.performConversion());
@@ -118,6 +208,13 @@ class RateRadar {
         
         if (fromCryptoAmount) {
             fromCryptoAmount.addEventListener('input', this.debounce(() => this.performCryptoConversion(), 300));
+            // Prevent invalid input
+            fromCryptoAmount.addEventListener('keypress', (e) => {
+                const char = String.fromCharCode(e.which);
+                if (!/[\d.]/.test(char) && e.which !== 8 && e.which !== 9) {
+                    e.preventDefault();
+                }
+            });
         }
         if (fromCrypto) {
             fromCrypto.addEventListener('change', () => this.performCryptoConversion());
@@ -286,7 +383,7 @@ class RateRadar {
             }
             
             // Show loading state
-            document.getElementById('toAmount').value = 'Loading...';
+            document.getElementById('toAmount').value = '';
             document.getElementById('exchangeRate').textContent = 'Fetching rate...';
             
             const rate = await this.getExchangeRate(fromCurrency, toCurrency);
@@ -309,7 +406,7 @@ class RateRadar {
             
         } catch (error) {
             console.error('Conversion error:', error);
-            document.getElementById('toAmount').value = 'Error';
+            document.getElementById('toAmount').value = '';
             document.getElementById('exchangeRate').textContent = 'Rate unavailable';
             this.showErrorMessage('Failed to convert currency. Please try again.');
         }
@@ -336,58 +433,120 @@ class RateRadar {
             }
             
             // Show loading state
-            document.getElementById('toCryptoAmount').value = 'Loading...';
-            document.getElementById('cryptoPrice').textContent = 'Loading...';
-            document.getElementById('cryptoChange').textContent = 'Loading...';
+            document.getElementById('toCryptoAmount').value = '';
+            document.getElementById('cryptoPrice').textContent = 'Fetching...';
+            document.getElementById('cryptoChange').textContent = '...';
             
-            // Get crypto price
-            const price = await this.getCryptoPrice(fromCrypto, toCrypto);
+            let convertedAmount, price;
             
-            if (price && !isNaN(price)) {
-                const convertedAmount = fromAmount * price;
+            // Check if both are cryptocurrencies
+            const isFromCrypto = this.isCryptoCurrency(fromCrypto);
+            const isToCrypto = this.isCryptoCurrency(toCrypto);
+            
+            if (isFromCrypto && isToCrypto) {
+                // Crypto to Crypto conversion
+                price = await this.getCryptoPrice(fromCrypto, 'usd');
+                const toCryptoPrice = await this.getCryptoPrice(toCrypto, 'usd');
                 
+                if (price && toCryptoPrice) {
+                    convertedAmount = (fromAmount * price) / toCryptoPrice;
+                    price = price / toCryptoPrice; // Show exchange rate
+                }
+            } else if (isFromCrypto && !isToCrypto) {
+                // Crypto to Fiat conversion
+                price = await this.getCryptoPrice(fromCrypto, toCrypto);
+                convertedAmount = fromAmount * price;
+            } else if (!isFromCrypto && isToCrypto) {
+                // Fiat to Crypto conversion
+                price = await this.getCryptoPrice(toCrypto, fromCrypto);
+                convertedAmount = fromAmount / price;
+            } else {
+                // Fiat to Fiat conversion (fallback to regular currency conversion)
+                const rate = await this.getExchangeRate(fromCrypto, toCrypto);
+                convertedAmount = fromAmount * rate;
+                price = rate;
+            }
+            
+            if (convertedAmount && !isNaN(convertedAmount)) {
                 // Format large numbers properly
                 let displayAmount;
                 if (convertedAmount > 1000000) {
                     displayAmount = convertedAmount.toExponential(2);
                 } else if (convertedAmount > 1000) {
-                    displayAmount = convertedAmount.toLocaleString('en-US', { maximumFractionDigits: 2 });
+                    displayAmount = convertedAmount.toLocaleString('en-US', { maximumFractionDigits: 6 });
                 } else {
                     displayAmount = convertedAmount.toFixed(6);
                 }
                 
                 document.getElementById('toCryptoAmount').value = displayAmount;
-                document.getElementById('cryptoPrice').textContent = `$${price.toFixed(2)}`;
                 
-                // Get 24h change
-                try {
-                    const change = await this.getCryptoChange(fromCrypto);
-                    if (change && !isNaN(change)) {
-                        const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
-                        document.getElementById('cryptoChange').textContent = changeText;
-                        document.getElementById('cryptoChange').className = `change-text ${change >= 0 ? 'positive' : 'negative'}`;
-                    } else {
+                // Format price display
+                if (isFromCrypto && isToCrypto) {
+                    document.getElementById('cryptoPrice').textContent = `1 ${fromCrypto.toUpperCase()} = ${price.toFixed(6)} ${toCrypto.toUpperCase()}`;
+                } else if (isFromCrypto && !isToCrypto) {
+                    document.getElementById('cryptoPrice').textContent = `$${price.toFixed(2)}`;
+                } else {
+                    document.getElementById('cryptoPrice').textContent = `${price.toFixed(6)}`;
+                }
+                
+                // Get 24h change for crypto
+                if (isFromCrypto) {
+                    try {
+                        const change = await this.getCryptoChange(fromCrypto);
+                        if (change && !isNaN(change)) {
+                            const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+                            document.getElementById('cryptoChange').textContent = changeText;
+                            document.getElementById('cryptoChange').className = `change-text ${change >= 0 ? 'positive' : 'negative'}`;
+                        } else {
+                            document.getElementById('cryptoChange').textContent = '+0.00%';
+                            document.getElementById('cryptoChange').className = 'change-text positive';
+                        }
+                    } catch (changeError) {
+                        console.log('Could not fetch 24h change:', changeError);
                         document.getElementById('cryptoChange').textContent = '+0.00%';
                         document.getElementById('cryptoChange').className = 'change-text positive';
                     }
-                } catch (changeError) {
-                    console.log('Could not fetch 24h change:', changeError);
-                    document.getElementById('cryptoChange').textContent = '+0.00%';
-                    document.getElementById('cryptoChange').className = 'change-text positive';
+                } else {
+                    document.getElementById('cryptoChange').textContent = 'N/A';
+                    document.getElementById('cryptoChange').className = 'change-text';
                 }
                 
                 console.log(`Crypto conversion successful: ${fromAmount} ${fromCrypto} = ${displayAmount} ${toCrypto}`);
             } else {
-                throw new Error('Invalid crypto price received');
+                throw new Error('Invalid conversion result received');
             }
             
         } catch (error) {
             console.error('Crypto conversion error:', error);
-            document.getElementById('toCryptoAmount').value = 'Error';
+            document.getElementById('toCryptoAmount').value = '';
             document.getElementById('cryptoPrice').textContent = 'Error';
             document.getElementById('cryptoChange').textContent = 'Error';
             this.showErrorMessage('Failed to convert cryptocurrency. Please try again.');
         }
+    }
+
+    // Helper function to check if a currency is crypto
+    isCryptoCurrency(currency) {
+        const cryptoCurrencies = [
+            'bitcoin', 'ethereum', 'binancecoin', 'cardano', 'solana', 'ripple', 'polkadot', 'dogecoin',
+            'avalanche-2', 'chainlink', 'matic-network', 'litecoin', 'uniswap', 'stellar', 'vechain',
+            'filecoin', 'tron', 'monero', 'eos', 'aave', 'algorand', 'tezos', 'cosmos', 'neo', 'dash',
+            'zcash', 'bitcoin-cash', 'ethereum-classic', 'iota', 'nem', 'waves', 'decred', 'qtum',
+            'omisego', 'icon', 'zilliqa', '0x', 'basic-attention-token', 'augur', 'golem', 'siacoin',
+            'digibyte', 'verge', 'steem', 'pivx', 'komodo', 'ardor', 'stratis', 'nxt', 'factom',
+            'maidsafecoin', 'peercoin', 'namecoin', 'feathercoin', 'novacoin', 'primecoin', 'gridcoin',
+            'vertcoin', 'potcoin', 'megacoin', 'auroracoin', 'reddcoin', 'blackcoin', 'nushares',
+            'nubits', 'mazacoin', 'burst', 'counterparty', 'omni', 'bitshares', 'zcoin', 'zencash',
+            'horizen', 'aeon', 'sumokoin', 'masari', 'turtlecoin', 'karbo', 'haven', 'loki-network',
+            'wownero', 'ryo-currency', 'lethean', 'dero', 'graft', 'stellite', 'triton', 'conceal',
+            'plenteum', 'italocoin', 'dinastycoin', 'bitcoin-private', 'bitcoin-gold', 'bitcoin-diamond',
+            'bitcoin-cash-abc', 'bitcoin-sv', 'polygon', 'compound', 'sushi', 'pancakeswap-token',
+            'curve-dao-token', 'yearn-finance', 'synthetix-network-token', 'balancer', '1inch', 'nano',
+            'ontology', 'harmony', 'elrond-erd-2', 'near', 'fantom', 'the-graph', 'decentraland',
+            'sandbox', 'enjincoin', 'axie-infinity', 'gala', 'chiliz', 'flow', 'internet-computer',
+            'theta-token', 'vega-protocol', 'celo', 'kusama'
+        ];
+        return cryptoCurrencies.includes(currency.toLowerCase());
     }
 
     swapCurrencies() {
@@ -401,8 +560,8 @@ class RateRadar {
         
         fromCurrency.value = toCurrency.value;
         toCurrency.value = tempCurrency;
-        fromAmount.value = toAmount.value;
-        toAmount.value = tempAmount;
+        fromAmount.value = toAmount.value || '';
+        toAmount.value = tempAmount || '';
         
         this.performConversion();
     }
@@ -418,8 +577,8 @@ class RateRadar {
         
         fromCrypto.value = toCrypto.value;
         toCrypto.value = tempCrypto;
-        fromAmount.value = toAmount.value;
-        toAmount.value = tempAmount;
+        fromAmount.value = toAmount.value || '';
+        toAmount.value = tempAmount || '';
         
         this.performCryptoConversion();
     }
@@ -1577,6 +1736,7 @@ class RateRadar {
 
     getCryptoOptions() {
         return [
+            // Major Cryptocurrencies
             { value: 'bitcoin', text: 'Bitcoin (BTC)' },
             { value: 'ethereum', text: 'Ethereum (ETH)' },
             { value: 'binancecoin', text: 'Binance Coin (BNB)' },
@@ -1672,7 +1832,130 @@ class RateRadar {
             { value: 'bitcoin-gold', text: 'Bitcoin Gold (BTG)' },
             { value: 'bitcoin-diamond', text: 'Bitcoin Diamond (BCD)' },
             { value: 'bitcoin-cash-abc', text: 'Bitcoin Cash ABC (BCHA)' },
-            { value: 'bitcoin-sv', text: 'Bitcoin SV (BSV)' }
+            { value: 'bitcoin-sv', text: 'Bitcoin SV (BSV)' },
+            { value: 'polygon', text: 'Polygon (MATIC)' },
+            { value: 'compound', text: 'Compound (COMP)' },
+            { value: 'sushi', text: 'SushiSwap (SUSHI)' },
+            { value: 'pancakeswap-token', text: 'PancakeSwap (CAKE)' },
+            { value: 'curve-dao-token', text: 'Curve DAO (CRV)' },
+            { value: 'yearn-finance', text: 'Yearn Finance (YFI)' },
+            { value: 'synthetix-network-token', text: 'Synthetix (SNX)' },
+            { value: 'balancer', text: 'Balancer (BAL)' },
+            { value: '1inch', text: '1inch (1INCH)' },
+            { value: 'nano', text: 'Nano (XNO)' },
+            { value: 'ontology', text: 'Ontology (ONT)' },
+            { value: 'harmony', text: 'Harmony (ONE)' },
+            { value: 'elrond-erd-2', text: 'Elrond (EGLD)' },
+            { value: 'near', text: 'NEAR Protocol (NEAR)' },
+            { value: 'fantom', text: 'Fantom (FTM)' },
+            { value: 'the-graph', text: 'The Graph (GRT)' },
+            { value: 'decentraland', text: 'Decentraland (MANA)' },
+            { value: 'sandbox', text: 'The Sandbox (SAND)' },
+            { value: 'enjincoin', text: 'Enjin Coin (ENJ)' },
+            { value: 'axie-infinity', text: 'Axie Infinity (AXS)' },
+            { value: 'gala', text: 'Gala (GALA)' },
+            { value: 'chiliz', text: 'Chiliz (CHZ)' },
+            { value: 'flow', text: 'Flow (FLOW)' },
+            { value: 'internet-computer', text: 'Internet Computer (ICP)' },
+            { value: 'theta-token', text: 'Theta Token (THETA)' },
+            { value: 'vega-protocol', text: 'Vega Protocol (VEGA)' },
+            { value: 'celo', text: 'Celo (CELO)' },
+            { value: 'kusama', text: 'Kusama (KSM)' },
+            
+            // Fiat Currencies (for crypto-to-fiat conversion)
+            { value: 'usd', text: 'USD - US Dollar' },
+            { value: 'eur', text: 'EUR - Euro' },
+            { value: 'gbp', text: 'GBP - British Pound' },
+            { value: 'jpy', text: 'JPY - Japanese Yen' },
+            { value: 'cny', text: 'CNY - Chinese Yuan' },
+            { value: 'cad', text: 'CAD - Canadian Dollar' },
+            { value: 'aud', text: 'AUD - Australian Dollar' },
+            { value: 'chf', text: 'CHF - Swiss Franc' },
+            { value: 'sek', text: 'SEK - Swedish Krona' },
+            { value: 'nok', text: 'NOK - Norwegian Krone' },
+            { value: 'dkk', text: 'DKK - Danish Krone' },
+            { value: 'pln', text: 'PLN - Polish Złoty' },
+            { value: 'czk', text: 'CZK - Czech Koruna' },
+            { value: 'huf', text: 'HUF - Hungarian Forint' },
+            { value: 'ron', text: 'RON - Romanian Leu' },
+            { value: 'bgn', text: 'BGN - Bulgarian Lev' },
+            { value: 'hrk', text: 'HRK - Croatian Kuna' },
+            { value: 'rub', text: 'RUB - Russian Ruble' },
+            { value: 'try', text: 'TRY - Turkish Lira' },
+            { value: 'brl', text: 'BRL - Brazilian Real' },
+            { value: 'mxn', text: 'MXN - Mexican Peso' },
+            { value: 'ars', text: 'ARS - Argentine Peso' },
+            { value: 'clp', text: 'CLP - Chilean Peso' },
+            { value: 'cop', text: 'COP - Colombian Peso' },
+            { value: 'pen', text: 'PEN - Peruvian Sol' },
+            { value: 'uyu', text: 'UYU - Uruguayan Peso' },
+            { value: 'vef', text: 'VEF - Venezuelan Bolívar' },
+            { value: 'ngn', text: 'NGN - Nigerian Naira' },
+            { value: 'zar', text: 'ZAR - South African Rand' },
+            { value: 'egp', text: 'EGP - Egyptian Pound' },
+            { value: 'mad', text: 'MAD - Moroccan Dirham' },
+            { value: 'tnd', text: 'TND - Tunisian Dinar' },
+            { value: 'dzd', text: 'DZD - Algerian Dinar' },
+            { value: 'lyd', text: 'LYD - Libyan Dinar' },
+            { value: 'kes', text: 'KES - Kenyan Shilling' },
+            { value: 'ugx', text: 'UGX - Ugandan Shilling' },
+            { value: 'tzs', text: 'TZS - Tanzanian Shilling' },
+            { value: 'etb', text: 'ETB - Ethiopian Birr' },
+            { value: 'ghs', text: 'GHS - Ghanaian Cedi' },
+            { value: 'xof', text: 'XOF - West African CFA Franc' },
+            { value: 'xaf', text: 'XAF - Central African CFA Franc' },
+            { value: 'inr', text: 'INR - Indian Rupee' },
+            { value: 'pkr', text: 'PKR - Pakistani Rupee' },
+            { value: 'bdt', text: 'BDT - Bangladeshi Taka' },
+            { value: 'lkr', text: 'LKR - Sri Lankan Rupee' },
+            { value: 'npr', text: 'NPR - Nepalese Rupee' },
+            { value: 'thb', text: 'THB - Thai Baht' },
+            { value: 'vnd', text: 'VND - Vietnamese Dong' },
+            { value: 'idr', text: 'IDR - Indonesian Rupiah' },
+            { value: 'myr', text: 'MYR - Malaysian Ringgit' },
+            { value: 'sgd', text: 'SGD - Singapore Dollar' },
+            { value: 'hkd', text: 'HKD - Hong Kong Dollar' },
+            { value: 'twd', text: 'TWD - Taiwan Dollar' },
+            { value: 'krw', text: 'KRW - South Korean Won' },
+            { value: 'php', text: 'PHP - Philippine Peso' },
+            { value: 'ils', text: 'ILS - Israeli Shekel' },
+            { value: 'aed', text: 'AED - UAE Dirham' },
+            { value: 'sar', text: 'SAR - Saudi Riyal' },
+            { value: 'qar', text: 'QAR - Qatari Riyal' },
+            { value: 'kwd', text: 'KWD - Kuwaiti Dinar' },
+            { value: 'bhd', text: 'BHD - Bahraini Dinar' },
+            { value: 'omr', text: 'OMR - Omani Rial' },
+            { value: 'jod', text: 'JOD - Jordanian Dinar' },
+            { value: 'lbp', text: 'LBP - Lebanese Pound' },
+            { value: 'irr', text: 'IRR - Iranian Rial' },
+            { value: 'iqd', text: 'IQD - Iraqi Dinar' },
+            { value: 'afn', text: 'AFN - Afghan Afghani' },
+            { value: 'uzs', text: 'UZS - Uzbekistani Som' },
+            { value: 'kzt', text: 'KZT - Kazakhstani Tenge' },
+            { value: 'gel', text: 'GEL - Georgian Lari' },
+            { value: 'arm', text: 'ARM - Armenian Dram' },
+            { value: 'azn', text: 'AZN - Azerbaijani Manat' },
+            { value: 'byn', text: 'BYN - Belarusian Ruble' },
+            { value: 'mdl', text: 'MDL - Moldovan Leu' },
+            { value: 'uah', text: 'UAH - Ukrainian Hryvnia' },
+            { value: 'kgs', text: 'KGS - Kyrgyzstani Som' },
+            { value: 'tjs', text: 'TJS - Tajikistani Somoni' },
+            { value: 'tmt', text: 'TMT - Turkmenistani Manat' },
+            { value: 'mnt', text: 'MNT - Mongolian Tögrög' },
+            { value: 'lak', text: 'LAK - Lao Kip' },
+            { value: 'khr', text: 'KHR - Cambodian Riel' },
+            { value: 'mmk', text: 'MMK - Myanmar Kyat' },
+            { value: 'bnd', text: 'BND - Brunei Dollar' },
+            { value: 'mvr', text: 'MVR - Maldivian Rufiyaa' },
+            { value: 'btn', text: 'BTN - Bhutanese Ngultrum' },
+            { value: 'mop', text: 'MOP - Macanese Pataca' },
+            { value: 'fjd', text: 'FJD - Fijian Dollar' },
+            { value: 'wst', text: 'WST - Samoan Tālā' },
+            { value: 'top', text: 'TOP - Tongan Paʻanga' },
+            { value: 'vuv', text: 'VUV - Vanuatu Vatu' },
+            { value: 'sbd', text: 'SBD - Solomon Islands Dollar' },
+            { value: 'pgk', text: 'PGK - Papua New Guinean Kina' },
+            { value: 'nzd', text: 'NZD - New Zealand Dollar' }
         ];
     }
 }

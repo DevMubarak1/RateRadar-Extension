@@ -124,10 +124,19 @@ class RateRadarOptions {
     }
 
     setupRealTimeUpdates() {
-        // Update statistics every 30 seconds
-        setInterval(() => {
-            this.loadStatistics();
-        }, 30000);
+        // Listen for storage changes to update statistics in real-time
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            if (namespace === 'sync') {
+                // Update statistics when alerts or favorites change
+                if (changes.alerts || changes.favorites) {
+                    this.loadStatistics();
+                }
+            }
+            if (namespace === 'local' && changes.statistics) {
+                // Update statistics display when local stats change
+                this.loadStatistics();
+            }
+        });
     }
 
     async loadSettings() {
@@ -212,6 +221,9 @@ class RateRadarOptions {
 
             // Apply theme immediately
             this.applyThemeToPage();
+
+            // Update statistics
+            await this.updateStatistics('settings', 1);
 
             // Show success message
             this.showToast('Settings saved successfully! ✅', 'success');
@@ -500,22 +512,83 @@ class RateRadarOptions {
 
     async loadStatistics() {
         try {
+            // Get statistics from local storage
             const result = await chrome.storage.local.get(['statistics']);
-            const stats = result.statistics || {
-                totalConversions: 0,
-                activeAlerts: 0,
-                favoritePairs: 0,
-                smartShoppingUses: 0
-            };
-
+            const stats = result.statistics || {};
+            
+            // Get alerts count
+            const alertsResult = await chrome.storage.sync.get(['alerts']);
+            const alerts = alertsResult.alerts || [];
+            const activeAlertsCount = alerts.filter(alert => alert.status === 'active').length;
+            
+            // Get favorites count
+            const favoritesResult = await chrome.storage.sync.get(['favorites']);
+            const favorites = favoritesResult.favorites || [];
+            
             // Update statistics display
-            document.getElementById('totalConversions').textContent = stats.totalConversions || 0;
-            document.getElementById('activeAlerts').textContent = stats.activeAlerts || 0;
-            document.getElementById('favoritePairs').textContent = stats.favoritePairs || 0;
-            document.getElementById('smartShoppingUses').textContent = stats.smartShoppingUses || 0;
-
+            const totalConversions = document.getElementById('totalConversions');
+            const activeAlerts = document.getElementById('activeAlerts');
+            const favoritePairs = document.getElementById('favoritePairs');
+            const smartShoppingUses = document.getElementById('smartShoppingUses');
+            
+            if (totalConversions) {
+                totalConversions.textContent = stats.totalConversions || 0;
+            }
+            if (activeAlerts) {
+                activeAlerts.textContent = activeAlertsCount;
+            }
+            if (favoritePairs) {
+                favoritePairs.textContent = favorites.length;
+            }
+            if (smartShoppingUses) {
+                smartShoppingUses.textContent = stats.smartShoppingUses || 0;
+            }
+            
+            console.log('Statistics loaded:', {
+                totalConversions: stats.totalConversions || 0,
+                activeAlerts: activeAlertsCount,
+                favoritePairs: favorites.length,
+                smartShoppingUses: stats.smartShoppingUses || 0
+            });
+            
         } catch (error) {
             console.error('Error loading statistics:', error);
+        }
+    }
+
+    async updateStatistics(type, increment = 1) {
+        try {
+            const result = await chrome.storage.local.get(['statistics']);
+            const stats = result.statistics || {};
+            
+            switch (type) {
+                case 'conversion':
+                    stats.totalConversions = (stats.totalConversions || 0) + increment;
+                    break;
+                case 'alert':
+                    stats.activeAlerts = (stats.activeAlerts || 0) + increment;
+                    break;
+                case 'favorite':
+                    stats.favoritePairs = (stats.favoritePairs || 0) + increment;
+                    break;
+                case 'smartShopping':
+                    stats.smartShoppingUses = (stats.smartShoppingUses || 0) + increment;
+                    break;
+                case 'settings':
+                    // This case is handled by saveSettings, but we can update it here
+                    // if we want to reflect the current settings in the statistics display
+                    // For now, we'll just log it.
+                    break;
+            }
+            
+            await chrome.storage.local.set({ statistics: stats });
+            console.log(`Statistics updated - ${type}:`, stats);
+            
+            // Reload statistics display
+            this.loadStatistics();
+            
+        } catch (error) {
+            console.error('Error updating statistics:', error);
         }
     }
 
