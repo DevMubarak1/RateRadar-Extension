@@ -58,7 +58,7 @@ class RateRadar {
 
     getDefaultSettings() {
         return {
-            theme: 'light',
+            theme: 'auto', // Changed from 'light' to 'auto'
             autoRefresh: true,
             refreshInterval: 5,
             notifications: true,
@@ -88,9 +88,29 @@ class RateRadar {
     }
 
     applyTheme(theme) {
-        const themeToApply = theme || this.settings.theme || 'light';
-        document.documentElement.setAttribute('data-theme', themeToApply);
-        console.log('Theme applied:', themeToApply);
+        const themeToApply = theme || this.settings.theme || 'auto';
+        
+        if (themeToApply === 'auto') {
+            // Detect system theme
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const actualTheme = prefersDark ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', actualTheme);
+            console.log('Auto theme applied:', actualTheme);
+            
+            // Listen for system theme changes
+            if (window.matchMedia) {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                    if (this.settings.theme === 'auto') {
+                        const newTheme = e.matches ? 'dark' : 'light';
+                        document.documentElement.setAttribute('data-theme', newTheme);
+                        console.log('System theme changed to:', newTheme);
+                    }
+                });
+            }
+        } else {
+            document.documentElement.setAttribute('data-theme', themeToApply);
+            console.log('Theme applied:', themeToApply);
+        }
     }
 
     applyDecimalPlaces() {
@@ -129,7 +149,167 @@ class RateRadar {
                 console.log('Auto refreshing rates...');
                 await this.performConversion();
                 await this.performCryptoConversion();
+                
+                // Check alerts after refreshing rates
+                await this.checkAlerts();
             }, interval);
+        }
+        
+        // Also set up alert checking interval
+        this.setupAlertChecking();
+    }
+
+    setupAlertChecking() {
+        const alertInterval = (this.settings.alertCheckInterval || 5) * 60 * 1000; // Convert to milliseconds
+        this.alertCheckInterval = setInterval(async () => {
+            await this.checkAlerts();
+        }, alertInterval);
+    }
+
+    async checkAlerts() {
+        try {
+            if (!this.settings.notifications) {
+                return; // Notifications disabled
+            }
+
+            const result = await chrome.storage.sync.get(['alerts']);
+            const alerts = result.alerts || [];
+            
+            if (alerts.length === 0) {
+                return;
+            }
+
+            console.log(`Checking ${alerts.length} alerts...`);
+
+            for (const alert of alerts) {
+                if (alert.status !== 'active') {
+                    continue;
+                }
+
+                try {
+                    let currentRate;
+                    
+                    // Check if it's a crypto alert
+                    const isFromCrypto = this.isCryptoCurrency(alert.fromCurrency);
+                    const isToCrypto = this.isCryptoCurrency(alert.toCurrency);
+                    
+                    if (isFromCrypto || isToCrypto) {
+                        // Crypto alert
+                        if (isFromCrypto && !isToCrypto) {
+                            // Crypto to Fiat
+                            currentRate = await this.getCryptoPrice(alert.fromCurrency, alert.toCurrency);
+                        } else if (!isFromCrypto && isToCrypto) {
+                            // Fiat to Crypto
+                            currentRate = await this.getCryptoPrice(alert.toCurrency, alert.fromCurrency);
+                            currentRate = 1 / currentRate; // Invert for fiat-to-crypto
+                        } else if (isFromCrypto && isToCrypto) {
+                            // Crypto to Crypto
+                            const fromPrice = await this.getCryptoPrice(alert.fromCurrency, 'usd');
+                            const toPrice = await this.getCryptoPrice(alert.toCurrency, 'usd');
+                            currentRate = fromPrice / toPrice;
+                        }
+                    } else {
+                        // Currency alert
+                        currentRate = await this.getExchangeRate(alert.fromCurrency, alert.toCurrency);
+                    }
+
+                    if (currentRate && !isNaN(currentRate)) {
+                        const shouldTrigger = this.checkAlertCondition(currentRate, alert.targetRate, alert.condition);
+                        
+                        if (shouldTrigger) {
+                            await this.triggerAlert(alert, currentRate);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error checking alert ${alert.id}:`, error);
+                }
+            }
+        } catch (error) {
+            console.error('Error checking alerts:', error);
+        }
+    }
+
+    checkAlertCondition(currentRate, targetRate, condition) {
+        if (condition === 'above') {
+            return currentRate >= targetRate;
+        } else if (condition === 'below') {
+            return currentRate <= targetRate;
+        }
+        return false;
+    }
+
+    async triggerAlert(alert, currentRate) {
+        try {
+            // Create notification
+            const notificationOptions = {
+                type: 'basic',
+                iconUrl: 'icons/icon48.png',
+                title: 'RateRadar Alert',
+                message: `${alert.fromCurrency} to ${alert.toCurrency} is now ${currentRate.toFixed(4)} (${alert.condition} ${alert.targetRate})`,
+                priority: 2
+            };
+
+            // Send notification
+            if (this.settings.notifications) {
+                chrome.notifications.create(`alert_${alert.id}`, notificationOptions);
+            }
+
+            // Play sound if enabled
+            if (this.settings.soundAlerts) {
+                this.playAlertSound();
+            }
+
+            // Mark alert as triggered (optional - you can remove this if you want alerts to trigger multiple times)
+            // await this.markAlertAsTriggered(alert.id);
+
+            console.log(`Alert triggered: ${alert.fromCurrency} to ${alert.toCurrency} = ${currentRate}`);
+            
+            // Show success message in popup
+            this.showSuccessMessage(`Alert triggered: ${alert.fromCurrency} → ${alert.toCurrency} = ${currentRate.toFixed(4)} 🔔`);
+            
+        } catch (error) {
+            console.error('Error triggering alert:', error);
+        }
+    }
+
+    playAlertSound() {
+        try {
+            // Create audio context for alert sound
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        } catch (error) {
+            console.error('Error playing alert sound:', error);
+        }
+    }
+
+    async markAlertAsTriggered(alertId) {
+        try {
+            const result = await chrome.storage.sync.get(['alerts']);
+            const alerts = result.alerts || [];
+            
+            const alertIndex = alerts.findIndex(alert => alert.id === alertId);
+            if (alertIndex !== -1) {
+                alerts[alertIndex].lastTriggered = new Date().toISOString();
+                alerts[alertIndex].triggerCount = (alerts[alertIndex].triggerCount || 0) + 1;
+                
+                await chrome.storage.sync.set({ alerts });
+            }
+        } catch (error) {
+            console.error('Error marking alert as triggered:', error);
         }
     }
 
@@ -468,17 +648,25 @@ class RateRadar {
             }
             
             if (convertedAmount && !isNaN(convertedAmount)) {
-                // Format large numbers properly
+                // Format large numbers properly - avoid scientific notation
                 let displayAmount;
-                if (convertedAmount > 1000000) {
-                    displayAmount = convertedAmount.toExponential(2);
-                } else if (convertedAmount > 1000) {
-                    displayAmount = convertedAmount.toLocaleString('en-US', { maximumFractionDigits: 6 });
+                if (convertedAmount >= 1000000) {
+                    // Use locale string for large numbers to avoid scientific notation
+                    displayAmount = convertedAmount.toLocaleString('en-US', { 
+                        maximumFractionDigits: 2,
+                        minimumFractionDigits: 2
+                    });
+                } else if (convertedAmount >= 1000) {
+                    displayAmount = convertedAmount.toLocaleString('en-US', { 
+                        maximumFractionDigits: 6,
+                        minimumFractionDigits: 2
+                    });
                 } else {
                     displayAmount = convertedAmount.toFixed(6);
                 }
                 
-                document.getElementById('toCryptoAmount').value = displayAmount;
+                // Set the value without commas for the input field
+                document.getElementById('toCryptoAmount').value = convertedAmount.toFixed(6);
                 
                 // Format price display
                 if (isFromCrypto && isToCrypto) {

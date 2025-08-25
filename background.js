@@ -1,431 +1,328 @@
-// RateRadar Simplified Background Service Worker
+// RateRadar Background Script - Handles alerts and notifications
 class RateRadarBackground {
     constructor() {
-        this.alarmInterval = 5; // 5 minutes
-        this.alerts = new Map();
+        this.settings = {};
+        this.alertCheckInterval = null;
         this.init();
     }
 
     async init() {
         try {
-            console.log('RateRadar Background initializing...');
+            console.log('RateRadar: Initializing background script...');
             
-            // Load existing alerts
-            await this.loadAlerts();
+            // Load settings
+            await this.loadSettings();
             
-            // Setup event listeners
-            this.setupEventListeners();
+            // Setup alert checking
+            this.setupAlertChecking();
             
-            // Setup alarms
-            this.setupAlarms();
+            // Listen for settings changes
+            this.setupSettingsListener();
             
-            // Handle installation
-            this.handleInstallation();
+            console.log('RateRadar: Background script initialized successfully');
             
-            console.log('RateRadar Background initialized successfully');
         } catch (error) {
-            console.error('RateRadar Background initialization error:', error);
+            console.error('RateRadar: Error during background initialization:', error);
         }
     }
 
-    async loadAlerts() {
+    async loadSettings() {
         try {
-            const result = await chrome.storage.sync.get('rateAlerts');
-            if (result.rateAlerts) {
-                this.alerts = new Map(Object.entries(result.rateAlerts));
-            }
+            const result = await chrome.storage.sync.get(['settings']);
+            this.settings = result.settings || this.getDefaultSettings();
         } catch (error) {
-            console.error('Error loading alerts:', error);
+            console.error('Error loading settings:', error);
+            this.settings = this.getDefaultSettings();
         }
     }
 
-    async saveAlerts() {
-        try {
-            const alertsObject = Object.fromEntries(this.alerts);
-            await chrome.storage.sync.set({ rateAlerts: alertsObject });
-        } catch (error) {
-            console.error('Error saving alerts:', error);
-        }
-    }
-
-    setupEventListeners() {
-        // Handle extension installation
-        chrome.runtime.onInstalled.addListener((details) => {
-            if (details.reason === 'install') {
-                this.onFirstInstall();
-            } else if (details.reason === 'update') {
-                this.onUpdate(details.previousVersion);
-            }
-        });
-
-        // Handle alarm events
-        chrome.alarms.onAlarm.addListener((alarm) => {
-            if (alarm.name === 'checkAlerts') {
-                this.checkAlerts();
-            } else if (alarm.name === 'updateRates') {
-                this.updateRates();
-            }
-        });
-
-        // Handle notification clicks
-        chrome.notifications.onClicked.addListener((notificationId) => {
-            this.handleNotificationClick(notificationId);
-        });
-
-        // Handle messages from popup/content scripts
-        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-            console.log('Background: Received message:', message);
-            
-            if (message.action === 'ping') {
-                sendResponse({ success: true, message: 'Background script is running' });
-            } else if (message.action === 'checkSmartShopping') {
-                sendResponse({ 
-                    success: true, 
-                    smartShopping: true,
-                    message: 'Smart shopping is enabled' 
-                });
-            } else if (message.action === 'getSettings') {
-                chrome.storage.sync.get(['settings'], (result) => {
-                    const settings = result.settings || {};
-                    sendResponse({ success: true, settings: settings });
-                });
-                return true; // Keep message channel open for async response
-            }
-            
-            sendResponse({ success: true });
-        });
-
-        // Handle extension startup
-        chrome.runtime.onStartup.addListener(() => {
-            this.onStartup();
-        });
-    }
-
-    setupAlarms() {
-        // Create alarm to check alerts every 5 minutes
-        chrome.alarms.create('checkAlerts', {
-            delayInMinutes: 1,
-            periodInMinutes: this.alarmInterval
-        });
-
-        // Create alarm to update rates every 15 minutes
-        chrome.alarms.create('updateRates', {
-            delayInMinutes: 5,
-            periodInMinutes: 15
-        });
-    }
-
-    handleInstallation() {
-        // Check if this is the first install
-        chrome.storage.sync.get('firstInstall', (result) => {
-            if (!result.firstInstall) {
-                this.onFirstInstall();
-            }
-        });
-    }
-
-    onFirstInstall() {
-        console.log('RateRadar first install detected');
-        
-        // Set default settings
-        const defaultSettings = {
-            firstInstall: true,
-            installDate: Date.now(),
-            baseCurrency: 'USD',
-            userCurrency: 'USD',
+    getDefaultSettings() {
+        return {
             theme: 'light',
-            autoRefresh: false,
+            autoRefresh: true,
             refreshInterval: 5,
             notifications: true,
             soundAlerts: false,
-            smartShopping: false,
+            smartShopping: true,
+            baseCurrency: 'USD',
             decimalPlaces: 2,
-            showTrends: false,
-            totalConversions: 0,
-            activeAlerts: 0,
-            favoritePairs: 0
+            cacheDuration: 300,
+            showTrends: true,
+            alertCheckInterval: 5,
+            maxAlerts: 10
         };
+    }
 
-        chrome.storage.sync.set(defaultSettings, () => {
-            console.log('Default settings saved');
+    setupAlertChecking() {
+        // Clear existing interval
+        if (this.alertCheckInterval) {
+            clearInterval(this.alertCheckInterval);
+        }
+
+        // Set up new interval based on settings
+        const alertInterval = (this.settings.alertCheckInterval || 5) * 60 * 1000; // Convert to milliseconds
+        this.alertCheckInterval = setInterval(async () => {
+            await this.checkAlerts();
+        }, alertInterval);
+
+        console.log(`Alert checking set to ${this.settings.alertCheckInterval} minutes`);
+    }
+
+    setupSettingsListener() {
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            if (namespace === 'sync' && changes.settings) {
+                console.log('Settings changed in background, updating...');
+                this.settings = changes.settings.newValue || this.getDefaultSettings();
+                this.setupAlertChecking();
+            }
         });
-
-        // Show welcome notification
-        this.showWelcomeNotification();
-    }
-
-    onUpdate(previousVersion) {
-        console.log(`RateRadar updated from ${previousVersion} to 1.1.0`);
-        
-        // Show update notification
-        this.showUpdateNotification(previousVersion);
-    }
-
-    onStartup() {
-        console.log('RateRadar startup detected');
-        this.checkAlerts();
     }
 
     async checkAlerts() {
         try {
-            console.log('Checking alerts...');
-            // Simple alert checking - can be enhanced later
+            if (!this.settings.notifications) {
+                return; // Notifications disabled
+            }
+
+            const result = await chrome.storage.sync.get(['alerts']);
+            const alerts = result.alerts || [];
+            
+            if (alerts.length === 0) {
+                return;
+            }
+
+            console.log(`Background: Checking ${alerts.length} alerts...`);
+
+            for (const alert of alerts) {
+                if (alert.status !== 'active') {
+                    continue;
+                }
+
+                try {
+                    let currentRate;
+                    
+                    // Check if it's a crypto alert
+                    const isFromCrypto = this.isCryptoCurrency(alert.fromCurrency);
+                    const isToCrypto = this.isCryptoCurrency(alert.toCurrency);
+                    
+                    if (isFromCrypto || isToCrypto) {
+                        // Crypto alert
+                        if (isFromCrypto && !isToCrypto) {
+                            // Crypto to Fiat
+                            currentRate = await this.getCryptoPrice(alert.fromCurrency, alert.toCurrency);
+                        } else if (!isFromCrypto && isToCrypto) {
+                            // Fiat to Crypto
+                            currentRate = await this.getCryptoPrice(alert.toCurrency, alert.fromCurrency);
+                            currentRate = 1 / currentRate; // Invert for fiat-to-crypto
+                        } else if (isFromCrypto && isToCrypto) {
+                            // Crypto to Crypto
+                            const fromPrice = await this.getCryptoPrice(alert.fromCurrency, 'usd');
+                            const toPrice = await this.getCryptoPrice(alert.toCurrency, 'usd');
+                            currentRate = fromPrice / toPrice;
+                        }
+                    } else {
+                        // Currency alert
+                        currentRate = await this.getExchangeRate(alert.fromCurrency, alert.toCurrency);
+                    }
+
+                    if (currentRate && !isNaN(currentRate)) {
+                        const shouldTrigger = this.checkAlertCondition(currentRate, alert.targetRate, alert.condition);
+                        
+                        if (shouldTrigger) {
+                            await this.triggerAlert(alert, currentRate);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error checking alert ${alert.id}:`, error);
+                }
+            }
         } catch (error) {
             console.error('Error checking alerts:', error);
         }
     }
 
-    async updateRates() {
-        try {
-            console.log('Updating rates...');
-            // Simple rate updating - can be enhanced later
-        } catch (error) {
-            console.error('Error updating rates:', error);
+    checkAlertCondition(currentRate, targetRate, condition) {
+        if (condition === 'above') {
+            return currentRate >= targetRate;
+        } else if (condition === 'below') {
+            return currentRate <= targetRate;
         }
+        return false;
     }
 
-    async handleMessage(request, sender, sendResponse) {
+    async triggerAlert(alert, currentRate) {
         try {
-            switch (request.action) {
-                case 'getCachedRate':
-                    const rate = await this.getCachedRate(request.fromCurrency, request.toCurrency);
-                    sendResponse({ success: true, rate: rate });
-                    break;
+            // Create notification
+            const notificationOptions = {
+                type: 'basic',
+                iconUrl: 'icons/icon48.png',
+                title: 'RateRadar Alert',
+                message: `${alert.fromCurrency} to ${alert.toCurrency} is now ${currentRate.toFixed(4)} (${alert.condition} ${alert.targetRate})`,
+                priority: 2
+            };
 
-                case 'updateRate':
-                    const newRate = await this.updatePairRate(request.fromCurrency, request.toCurrency);
-                    sendResponse({ success: true, rate: newRate });
-                    break;
-
-                case 'addAlert':
-                    const alertId = await this.addAlert(request.alertData);
-                    sendResponse({ success: true, alertId: alertId });
-                    break;
-
-                case 'removeAlert':
-                    await this.removeAlert(request.alertId);
-                    sendResponse({ success: true });
-                    break;
-
-                case 'getAlerts':
-                    const alerts = Array.from(this.alerts.values());
-                    sendResponse({ success: true, alerts: alerts });
-                    break;
-
-                case 'updateSettings':
-                    await this.updateSettings(request.settings);
-                    sendResponse({ success: true });
-                    break;
-
-                case 'getSettings':
-                    const settings = await this.getSettings();
-                    sendResponse({ success: true, settings: settings });
-                    break;
-
-                case 'incrementConversion':
-                    await this.incrementConversion();
-                    sendResponse({ success: true });
-                    break;
-
-                default:
-                    sendResponse({ success: false, error: 'Unknown action' });
+            // Send notification
+            if (this.settings.notifications) {
+                chrome.notifications.create(`alert_${alert.id}`, notificationOptions);
             }
-        } catch (error) {
-            console.error('Error handling message:', error);
-            sendResponse({ success: false, error: error.message });
-        }
-    }
 
-    async addAlert(alertData) {
-        const alertId = 'alert_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        const alert = {
-            id: alertId,
-            fromCurrency: alertData.fromCurrency,
-            toCurrency: alertData.toCurrency,
-            targetRate: parseFloat(alertData.targetRate),
-            condition: alertData.condition,
-            isActive: true,
-            createdAt: Date.now(),
-            lastChecked: 0,
-            triggered: false,
-            description: alertData.description || '',
-            type: alertData.type || 'currency'
-        };
-
-        this.alerts.set(alertId, alert);
-        await this.saveAlerts();
-        return alertId;
-    }
-
-    async removeAlert(alertId) {
-        this.alerts.delete(alertId);
-        await this.saveAlerts();
-    }
-
-    async getCachedRate(fromCurrency, toCurrency) {
-        try {
-            const cacheKey = `rate_${fromCurrency}_${toCurrency}`;
-            const result = await chrome.storage.local.get(cacheKey);
+            console.log(`Background: Alert triggered: ${alert.fromCurrency} to ${alert.toCurrency} = ${currentRate}`);
             
-            if (result[cacheKey] && !this.isCacheExpired(result[cacheKey].timestamp)) {
-                return result[cacheKey].rate;
-            }
-            
-            return null;
         } catch (error) {
-            console.error('Error getting cached rate:', error);
-            return null;
+            console.error('Error triggering alert:', error);
         }
     }
 
-    async updatePairRate(fromCurrency, toCurrency) {
-        try {
-            const rate = await this.getExchangeRate(fromCurrency, toCurrency);
-            if (rate) {
-                const cacheKey = `rate_${fromCurrency}_${toCurrency}`;
-                await chrome.storage.local.set({
-                    [cacheKey]: {
-                        rate: rate,
-                        timestamp: Date.now()
-                    }
-                });
-                return rate;
-            }
-        } catch (error) {
-            console.error(`Error updating rate for ${fromCurrency}/${toCurrency}:`, error);
-        }
-        return null;
+    // Helper function to check if a currency is crypto
+    isCryptoCurrency(currency) {
+        const cryptoCurrencies = [
+            'bitcoin', 'ethereum', 'binancecoin', 'cardano', 'solana', 'ripple', 'polkadot', 'dogecoin',
+            'avalanche-2', 'chainlink', 'matic-network', 'litecoin', 'uniswap', 'stellar', 'vechain',
+            'filecoin', 'tron', 'monero', 'eos', 'aave', 'algorand', 'tezos', 'cosmos', 'neo', 'dash',
+            'zcash', 'bitcoin-cash', 'ethereum-classic', 'iota', 'nem', 'waves', 'decred', 'qtum',
+            'omisego', 'icon', 'zilliqa', '0x', 'basic-attention-token', 'augur', 'golem', 'siacoin',
+            'digibyte', 'verge', 'steem', 'pivx', 'komodo', 'ardor', 'stratis', 'nxt', 'factom',
+            'maidsafecoin', 'peercoin', 'namecoin', 'feathercoin', 'novacoin', 'primecoin', 'gridcoin',
+            'vertcoin', 'potcoin', 'megacoin', 'auroracoin', 'reddcoin', 'blackcoin', 'nushares',
+            'nubits', 'mazacoin', 'burst', 'counterparty', 'omni', 'bitshares', 'zcoin', 'zencash',
+            'horizen', 'aeon', 'sumokoin', 'masari', 'turtlecoin', 'karbo', 'haven', 'loki-network',
+            'wownero', 'ryo-currency', 'lethean', 'dero', 'graft', 'stellite', 'triton', 'conceal',
+            'plenteum', 'italocoin', 'dinastycoin', 'bitcoin-private', 'bitcoin-gold', 'bitcoin-diamond',
+            'bitcoin-cash-abc', 'bitcoin-sv', 'polygon', 'compound', 'sushi', 'pancakeswap-token',
+            'curve-dao-token', 'yearn-finance', 'synthetix-network-token', 'balancer', '1inch', 'nano',
+            'ontology', 'harmony', 'elrond-erd-2', 'near', 'fantom', 'the-graph', 'decentraland',
+            'sandbox', 'enjincoin', 'axie-infinity', 'gala', 'chiliz', 'flow', 'internet-computer',
+            'theta-token', 'vega-protocol', 'celo', 'kusama'
+        ];
+        return cryptoCurrencies.includes(currency.toLowerCase());
     }
 
     async getExchangeRate(fromCurrency, toCurrency) {
-        const exchangeAPIs = [
-            'https://api.exchangerate-api.com/v4/latest',
-            'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies',
-            'https://latest.currency-api.pages.dev/v1/currencies'
-        ];
-
-        const from = fromCurrency.toLowerCase();
-        const to = toCurrency.toLowerCase();
-
-        for (let i = 0; i < exchangeAPIs.length; i++) {
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
-                
-                let response, data;
-                
-                if (exchangeAPIs[i].includes('fawazahmed0') || exchangeAPIs[i].includes('currency-api')) {
-                    const url = `${exchangeAPIs[i]}/${from}.json`;
-                    response = await fetch(url, { 
-                        signal: controller.signal,
-                        headers: {
-                            'Accept': 'application/json',
-                            'User-Agent': 'RateRadar/1.1'
-                        }
-                    });
-                    
-                    clearTimeout(timeoutId);
-                    
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    
-                    data = await response.json();
-                    if (data[from] && data[from][to]) {
-                        return data[from][to];
-                    }
-                } else if (exchangeAPIs[i].includes('exchangerate-api')) {
-                    const url = `${exchangeAPIs[i]}/${from.toUpperCase()}`;
-                    response = await fetch(url, { 
-                        signal: controller.signal,
-                        headers: {
-                            'Accept': 'application/json',
-                            'User-Agent': 'RateRadar/1.1'
-                        }
-                    });
-                    
-                    clearTimeout(timeoutId);
-                    
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    
-                    data = await response.json();
-                    if (data.rates && data.rates[to.toUpperCase()]) {
-                        return data.rates[to.toUpperCase()];
-                    }
+        try {
+            console.log(`Background: Fetching rate: ${fromCurrency} to ${toCurrency}`);
+            
+            // Try multiple API endpoints for reliability
+            const apis = [
+                {
+                    url: `https://api.exchangerate.host/latest?base=${fromCurrency.toUpperCase()}&symbols=${toCurrency.toUpperCase()}`,
+                    handler: (data) => data.rates && data.rates[toCurrency.toUpperCase()]
+                },
+                {
+                    url: `https://latest.currency-api.pages.dev/v1/currencies/${fromCurrency.toLowerCase()}.json`,
+                    handler: (data) => data[fromCurrency.toLowerCase()] && data[fromCurrency.toLowerCase()][toCurrency.toLowerCase()]
                 }
-            } catch (error) {
-                console.log(`API ${i + 1} failed:`, error);
-                continue;
+            ];
+            
+            for (let i = 0; i < apis.length; i++) {
+                try {
+                    console.log(`Background: Trying API ${i + 1}: ${apis[i].url}`);
+                    
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
+                    
+                    const response = await fetch(apis[i].url, { 
+                        signal: controller.signal,
+                        headers: {
+                            'Accept': 'application/json',
+                            'User-Agent': 'RateRadar/1.0'
+                        }
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log(`Background: API ${i + 1} response:`, data);
+                        
+                        const rate = apis[i].handler(data);
+                        if (rate) {
+                            console.log(`Background: Success! Rate: ${rate}`);
+                            return parseFloat(rate);
+                        }
+                    }
+                } catch (apiError) {
+                    console.log(`Background: API ${i + 1} failed:`, apiError.message);
+                    continue;
+                }
             }
-        }
-        
-        return null;
-    }
-
-    isCacheExpired(timestamp) {
-        const cacheTimeout = 5 * 60 * 1000; // 5 minutes
-        return Date.now() - timestamp > cacheTimeout;
-    }
-
-    async updateSettings(newSettings) {
-        try {
-            await chrome.storage.sync.set(newSettings);
+            
+            throw new Error('All exchange rate APIs failed');
+            
         } catch (error) {
-            console.error('Error updating settings:', error);
+            console.error('Background: Error fetching exchange rate:', error);
+            throw error;
         }
     }
 
-    async getSettings() {
+    async getCryptoPrice(cryptoId, targetCurrency = 'usd') {
         try {
-            const result = await chrome.storage.sync.get([
-                'baseCurrency', 'userCurrency', 'theme', 'autoRefresh',
-                'refreshInterval', 'notifications', 'soundAlerts',
-                'smartShopping', 'decimalPlaces', 'showTrends',
-                'totalConversions', 'activeAlerts', 'favoritePairs'
-            ]);
-            return result;
+            console.log(`Background: Fetching crypto price: ${cryptoId} to ${targetCurrency}`);
+            
+            // Map common crypto names to CoinGecko IDs
+            const cryptoMap = {
+                'bitcoin': 'bitcoin', 'btc': 'bitcoin',
+                'ethereum': 'ethereum', 'eth': 'ethereum',
+                'binancecoin': 'binancecoin', 'bnb': 'binancecoin',
+                'cardano': 'cardano', 'ada': 'cardano',
+                'solana': 'solana', 'sol': 'solana',
+                'ripple': 'ripple', 'xrp': 'ripple',
+                'polkadot': 'polkadot', 'dot': 'polkadot',
+                'dogecoin': 'dogecoin', 'doge': 'dogecoin',
+                'avalanche-2': 'avalanche-2', 'avax': 'avalanche-2',
+                'chainlink': 'chainlink', 'link': 'chainlink',
+                'matic-network': 'matic-network', 'matic': 'matic-network',
+                'litecoin': 'litecoin', 'ltc': 'litecoin',
+                'uniswap': 'uniswap', 'uni': 'uniswap',
+                'stellar': 'stellar', 'xlm': 'stellar',
+                'vechain': 'vechain', 'vet': 'vechain',
+                'filecoin': 'filecoin', 'fil': 'filecoin',
+                'tron': 'tron', 'trx': 'tron',
+                'monero': 'monero', 'xmr': 'monero',
+                'eos': 'eos', 'aave': 'aave',
+                'algorand': 'algorand', 'algo': 'algorand',
+                'tezos': 'tezos', 'xtz': 'tezos',
+                'cosmos': 'cosmos', 'atom': 'cosmos',
+                'neo': 'neo', 'dash': 'dash',
+                'zcash': 'zcash', 'zec': 'zcash',
+                'bitcoin-cash': 'bitcoin-cash', 'bch': 'bitcoin-cash',
+                'ethereum-classic': 'ethereum-classic', 'etc': 'ethereum-classic'
+            };
+            
+            // Get the correct CoinGecko ID
+            const coinGeckoId = cryptoMap[cryptoId.toLowerCase()] || cryptoId.toLowerCase();
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            
+            const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=${targetCurrency}&include_24hr_change=true`, {
+                signal: controller.signal,
+                headers: {
+                    'Accept': 'application/json',
+                    'User-Agent': 'RateRadar/1.0'
+                }
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log(`Background: Crypto API response:`, data);
+                
+                if (data[coinGeckoId] && data[coinGeckoId][targetCurrency]) {
+                    const price = data[coinGeckoId][targetCurrency];
+                    console.log(`Background: Success! Crypto price: ${price}`);
+                    return parseFloat(price);
+                }
+            }
+            
+            throw new Error('Failed to fetch crypto price');
+            
         } catch (error) {
-            console.error('Error getting settings:', error);
-            return {};
+            console.error('Background: Error fetching crypto price:', error);
+            throw error;
         }
-    }
-
-    async incrementConversion() {
-        try {
-            const result = await chrome.storage.sync.get('totalConversions');
-            const currentCount = result.totalConversions || 0;
-            await chrome.storage.sync.set({ totalConversions: currentCount + 1 });
-        } catch (error) {
-            console.error('Error incrementing conversion count:', error);
-        }
-    }
-
-    handleNotificationClick(notificationId) {
-        // Handle notification clicks
-        if (notificationId.startsWith('rateradar_')) {
-            // Open popup or options page
-            chrome.action.openPopup();
-        }
-    }
-
-    showWelcomeNotification() {
-        chrome.notifications.create('welcome', {
-            type: 'basic',
-            iconUrl: 'icons/icon.png',
-            title: 'Welcome to RateRadar!',
-            message: 'Your currency and crypto tracking companion is ready to use.',
-            priority: 1
-        });
-    }
-
-    showUpdateNotification(previousVersion) {
-        chrome.notifications.create('update', {
-            type: 'basic',
-            iconUrl: 'icons/icon.png',
-            title: 'RateRadar Updated!',
-            message: `Updated from ${previousVersion} to 1.1.0. New features include enhanced alerts and 180+ currency support.`,
-            priority: 1
-        });
     }
 }
 
-// Initialize background service worker
+// Initialize the background script
 const rateRadarBackground = new RateRadarBackground(); 
