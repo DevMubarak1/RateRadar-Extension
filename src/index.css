@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Open+Sans:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -58,16 +58,16 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Open Sans', sans-serif;
   }
   
   /* Font classes */
-  .font-poppins {
-    font-family: 'Poppins', sans-serif;
+  .font-montserrat {
+    font-family: 'Montserrat', sans-serif;
   }
   
-  .font-inter {
-    font-family: 'Inter', sans-serif;
+  .font-opensans {
+    font-family: 'Open Sans', sans-serif;
   }
 }
 
@@ -151,26 +151,25 @@ html {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-/* Enhanced line background visibility */
+/* Enhanced line background visibility with reduced spacing */
 .line-background {
-  opacity: 0.4 !important;
+  opacity: 0.6 !important;
 }
 
 .line-background .bg-blue-400 {
-  background-color: #60a5fa !important;
-  box-shadow: 0 0 4px rgba(96, 165, 250, 0.3);
+  background-color: #3b82f6 !important;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.5);
 }
 
 .line-background .bg-blue-300 {
-  background-color: #93c5fd !important;
-  box-shadow: 0 0 3px rgba(147, 197, 253, 0.3);
+  background-color: #60a5fa !important;
+  box-shadow: 0 0 4px rgba(96, 165, 250, 0.5);
 }
 
 /* Mobile optimizations */
 @media (max-width: 768px) {
-  .h-screen {
-    height: 100vh;
-    overflow-y: auto;
+  .min-h-screen {
+    min-height: 100vh;
   }
   
   /* Ensure single screen on mobile */
@@ -207,17 +206,17 @@ html {
   
   /* Make lines more visible on mobile */
   .line-background {
-    opacity: 0.5 !important;
+    opacity: 0.7 !important;
   }
   
   .line-background .bg-blue-400 {
-    background-color: #3b82f6 !important;
-    box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+    background-color: #2563eb !important;
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.6);
   }
   
   .line-background .bg-blue-300 {
-    background-color: #60a5fa !important;
-    box-shadow: 0 0 4px rgba(96, 165, 250, 0.4);
+    background-color: #3b82f6 !important;
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
   }
 }
 
