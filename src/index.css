@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -56,6 +58,16 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  /* Font classes */
+  .font-poppins {
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  .font-inter {
+    font-family: 'Inter', sans-serif;
   }
 }
 
@@ -139,10 +151,24 @@ html {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
+/* Enhanced line background visibility */
+.line-background {
+  opacity: 0.4 !important;
+}
+
+.line-background .bg-blue-400 {
+  background-color: #60a5fa !important;
+  box-shadow: 0 0 4px rgba(96, 165, 250, 0.3);
+}
+
+.line-background .bg-blue-300 {
+  background-color: #93c5fd !important;
+  box-shadow: 0 0 3px rgba(147, 197, 253, 0.3);
+}
+
 /* Mobile optimizations */
 @media (max-width: 768px) {
-  .min-h-screen {
-    min-height: 100vh;
+  .h-screen {
     height: 100vh;
     overflow-y: auto;
   }
@@ -179,11 +205,19 @@ html {
     padding: 1rem;
   }
   
-  /* Hide line background on very small screens */
-  @media (max-width: 480px) {
-    .line-background {
-      display: none;
-    }
+  /* Make lines more visible on mobile */
+  .line-background {
+    opacity: 0.5 !important;
+  }
+  
+  .line-background .bg-blue-400 {
+    background-color: #3b82f6 !important;
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+  }
+  
+  .line-background .bg-blue-300 {
+    background-color: #60a5fa !important;
+    box-shadow: 0 0 4px rgba(96, 165, 250, 0.4);
   }
 }
 
@@ -197,7 +231,7 @@ html {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
