@@ -1,0 +1,232 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Background -->
+  <rect width="128" height="128" rx="20" fill="#2563EB"/>
+  
+  <!-- Radar circle -->
+  <circle cx="64" cy="64" r="50" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.3"/>
+  <circle cx="64" cy="64" r="35" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.5"/>
+  <circle cx="64" cy="64" r="20" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.7"/>
+  
+  <!-- Radar sweep -->
+  <path d="M 64 64 L 64 14 A 50 50 0 0 1 114 64 Z" fill="url(#radarGradient)" opacity="0.6">
+    <animateTransform
+      attributeName="transform"
+      type="rotate"
+      values="0 64 64;360 64 64"
+      dur="3s"
+      repeatCount="indefinite"/>
+  </path>
+  
+  <!-- Center dot -->
+  <circle cx="64" cy="64" r="3" fill="#FFFFFF"/>
+  
+  <!-- Currency symbols -->
+  <text x="45" y="35" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="12" font-weight="bold">$</text>
+  <text x="85" y="45" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold">€</text>
+  <text x="90" y="85" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold">£</text>
+  <text x="35" y="90" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold">¥</text>
+  
+  <!-- RateRadar text -->
+  <text x="64" y="108" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="9" font-weight="bold" text-anchor="middle">RateRadar</text>
+  
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="radarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+</svg> 
+  
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#grad1)" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- Radar lines -->
+  <g stroke="#ffffff" stroke-width="2" fill="none" opacity="0.8">
+    <circle cx="64" cy="64" r="20"/>
+    <circle cx="64" cy="64" r="35"/>
+    <circle cx="64" cy="64" r="50"/>
+    
+    <!-- Radar sweep line -->
+    <line x1="64" y1="64" x2="64" y2="14" stroke="#ffffff" stroke-width="3" opacity="0.9">
+      <animateTransform attributeName="transform" type="rotate" from="0 64 64" to="360 64 64" dur="3s" repeatCount="indefinite"/>
+    </line>
+  </g>
+  
+  <!-- Currency symbols -->
+  <text x="64" y="45" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">$</text>
+  <text x="64" y="85" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">€</text>
+  <text x="45" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">£</text>
+  <text x="83" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">¥</text>
+  
+  <!-- Center dot -->
+  <circle cx="64" cy="64" r="4" fill="#ffffff"/>
+</svg> ine>
+  </g>
+  
+  <!-- Currency symbols -->
+  <text x="64" y="45" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">$</text>
+  <text x="64" y="85" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">€</text>
+  <text x="45" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">£</text>
+  <text x="83" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">¥</text>
+  
+  <!-- Center dot -->
+  <circle cx="64" cy="64" r="4" fill="#ffffff"/>
+</svg> 
+  <defs>
+    <linearGradient id="radarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+</svg> 
+  <defs>
+    <linearGradient id="radarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+</svg> 
+  
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#grad1)" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- Radar lines -->
+  <g stroke="#ffffff" stroke-width="2" fill="none" opacity="0.8">
+    <circle cx="64" cy="64" r="20"/>
+    <circle cx="64" cy="64" r="35"/>
+    <circle cx="64" cy="64" r="50"/>
+    
+    <!-- Radar sweep line -->
+    <line x1="64" y1="64" x2="64" y2="14" stroke="#ffffff" stroke-width="3" opacity="0.9">
+      <animateTransform attributeName="transform" type="rotate" from="0 64 64" to="360 64 64" dur="3s" repeatCount="indefinite"/>
+    </line>
+  </g>
+  
+  <!-- Currency symbols -->
+  <text x="64" y="45" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">$</text>
+  <text x="64" y="85" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">€</text>
+  <text x="45" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">£</text>
+  <text x="83" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">¥</text>
+  
+  <!-- Center dot -->
+  <circle cx="64" cy="64" r="4" fill="#ffffff"/>
+</svg> ine>
+  </g>
+  
+  <!-- Currency symbols -->
+  <text x="64" y="45" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">$</text>
+  <text x="64" y="85" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">€</text>
+  <text x="45" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">£</text>
+  <text x="83" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">¥</text>
+  
+  <!-- Center dot -->
+  <circle cx="64" cy="64" r="4" fill="#ffffff"/>
+</svg> 
+  <defs>
+    <linearGradient id="radarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+</svg> 
+  <defs>
+    <linearGradient id="radarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+</svg> 
+  
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#grad1)" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- Radar lines -->
+  <g stroke="#ffffff" stroke-width="2" fill="none" opacity="0.8">
+    <circle cx="64" cy="64" r="20"/>
+    <circle cx="64" cy="64" r="35"/>
+    <circle cx="64" cy="64" r="50"/>
+    
+    <!-- Radar sweep line -->
+    <line x1="64" y1="64" x2="64" y2="14" stroke="#ffffff" stroke-width="3" opacity="0.9">
+      <animateTransform attributeName="transform" type="rotate" from="0 64 64" to="360 64 64" dur="3s" repeatCount="indefinite"/>
+    </line>
+  </g>
+  
+  <!-- Currency symbols -->
+  <text x="64" y="45" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">$</text>
+  <text x="64" y="85" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">€</text>
+  <text x="45" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">£</text>
+  <text x="83" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">¥</text>
+  
+  <!-- Center dot -->
+  <circle cx="64" cy="64" r="4" fill="#ffffff"/>
+</svg> ine>
+  </g>
+  
+  <!-- Currency symbols -->
+  <text x="64" y="45" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">$</text>
+  <text x="64" y="85" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">€</text>
+  <text x="45" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">£</text>
+  <text x="83" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">¥</text>
+  
+  <!-- Center dot -->
+  <circle cx="64" cy="64" r="4" fill="#ffffff"/>
+</svg> 
+  <defs>
+    <linearGradient id="radarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+</svg> 
+  <defs>
+    <linearGradient id="radarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+</svg> 
+  
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#grad1)" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- Radar lines -->
+  <g stroke="#ffffff" stroke-width="2" fill="none" opacity="0.8">
+    <circle cx="64" cy="64" r="20"/>
+    <circle cx="64" cy="64" r="35"/>
+    <circle cx="64" cy="64" r="50"/>
+    
+    <!-- Radar sweep line -->
+    <line x1="64" y1="64" x2="64" y2="14" stroke="#ffffff" stroke-width="3" opacity="0.9">
+      <animateTransform attributeName="transform" type="rotate" from="0 64 64" to="360 64 64" dur="3s" repeatCount="indefinite"/>
+    </line>
+  </g>
+  
+  <!-- Currency symbols -->
+  <text x="64" y="45" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">$</text>
+  <text x="64" y="85" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">€</text>
+  <text x="45" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">£</text>
+  <text x="83" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">¥</text>
+  
+  <!-- Center dot -->
+  <circle cx="64" cy="64" r="4" fill="#ffffff"/>
+</svg> ine>
+  </g>
+  
+  <!-- Currency symbols -->
+  <text x="64" y="45" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">$</text>
+  <text x="64" y="85" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">€</text>
+  <text x="45" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">£</text>
+  <text x="83" y="65" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">¥</text>
+  
+  <!-- Center dot -->
+  <circle cx="64" cy="64" r="4" fill="#ffffff"/>
+</svg> 
+  <defs>
+    <linearGradient id="radarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+</svg> 
