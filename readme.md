@@ -1,6 +1,6 @@
 # RateRadar - Currency & Crypto Exchange Rate Tracker
 
-![RateRadar Logo](icons/icon.svg)
+![RateRadar Logo](icons/icon.png)
 
 > Track, convert, and monitor currency and crypto exchange rates—anytime, anywhere.
 

@@ -1,4 +1,6 @@
-// RateRadar Background Script - Handles alerts and notifications
+// RateRadar Background Script
+console.log('RateRadar: Background script loaded');
+
 class RateRadarBackground {
     constructor() {
         this.settings = {};
@@ -212,7 +214,7 @@ class RateRadarBackground {
                     handler: (data) => data[fromCurrency.toLowerCase()] && data[fromCurrency.toLowerCase()][toCurrency.toLowerCase()]
                 }
             ];
-            
+
             for (let i = 0; i < apis.length; i++) {
                 try {
                     console.log(`Background: Trying API ${i + 1}: ${apis[i].url}`);
@@ -324,5 +326,4 @@ class RateRadarBackground {
     }
 }
 
-// Initialize the background script
 const rateRadarBackground = new RateRadarBackground(); 

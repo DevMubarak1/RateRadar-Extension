@@ -672,7 +672,8 @@ class RateRadar {
                 if (isFromCrypto && isToCrypto) {
                     document.getElementById('cryptoPrice').textContent = `1 ${fromCrypto.toUpperCase()} = ${price.toFixed(6)} ${toCrypto.toUpperCase()}`;
                 } else if (isFromCrypto && !isToCrypto) {
-                    document.getElementById('cryptoPrice').textContent = `$${price.toFixed(2)}`;
+                    const currencySymbol = this.getCurrencySymbol(toCrypto);
+                    document.getElementById('cryptoPrice').textContent = `${currencySymbol}${price.toFixed(2)}`;
                 } else {
                     document.getElementById('cryptoPrice').textContent = `${price.toFixed(6)}`;
                 }
@@ -711,6 +712,107 @@ class RateRadar {
             document.getElementById('cryptoChange').textContent = 'Error';
             this.showErrorMessage('Failed to convert cryptocurrency. Please try again.');
         }
+    }
+
+    // Helper function to get currency symbol
+    getCurrencySymbol(currency) {
+        const currencySymbols = {
+            'usd': '$',
+            'eur': '€',
+            'gbp': '£',
+            'jpy': '¥',
+            'cny': '¥',
+            'cad': 'C$',
+            'aud': 'A$',
+            'chf': 'CHF',
+            'sek': 'kr',
+            'nok': 'kr',
+            'dkk': 'kr',
+            'pln': 'zł',
+            'czk': 'Kč',
+            'huf': 'Ft',
+            'ron': 'lei',
+            'bgn': 'лв',
+            'hrk': 'kn',
+            'rub': '₽',
+            'try': '₺',
+            'brl': 'R$',
+            'mxn': '$',
+            'ars': '$',
+            'clp': '$',
+            'cop': '$',
+            'pen': 'S/',
+            'uyu': '$',
+            'vef': 'Bs',
+            'ngn': '₦',
+            'zar': 'R',
+            'egp': 'E£',
+            'mad': 'MAD',
+            'tnd': 'TND',
+            'dzd': 'DZD',
+            'lyd': 'LYD',
+            'kes': 'KSh',
+            'ugx': 'USh',
+            'tzs': 'TSh',
+            'etb': 'ETB',
+            'ghs': 'GH₵',
+            'xof': 'CFA',
+            'xaf': 'FCFA',
+            'inr': '₹',
+            'pkr': '₨',
+            'bdt': '৳',
+            'lkr': 'Rs',
+            'npr': '₨',
+            'thb': '฿',
+            'vnd': '₫',
+            'idr': 'Rp',
+            'myr': 'RM',
+            'sgd': 'S$',
+            'hkd': 'HK$',
+            'twd': 'NT$',
+            'krw': '₩',
+            'php': '₱',
+            'ils': '₪',
+            'aed': 'د.إ',
+            'sar': '﷼',
+            'qar': '﷼',
+            'kwd': 'د.ك',
+            'bhd': '.د.ب',
+            'omr': 'ر.ع.',
+            'jod': 'د.ا',
+            'lbp': 'ل.ل',
+            'irr': '﷼',
+            'iqd': 'ع.د',
+            'afn': '؋',
+            'uzs': 'so\'m',
+            'kzt': '₸',
+            'gel': '₾',
+            'arm': '֏',
+            'azn': '₼',
+            'byn': 'Br',
+            'mdl': 'L',
+            'uah': '₴',
+            'kgs': 'с',
+            'tjs': 'ЅМ',
+            'tmt': 'T',
+            'mnt': '₮',
+            'lak': '₭',
+            'khr': '៛',
+            'mmk': 'K',
+            'bnd': 'B$',
+            'mvr': 'Rf',
+            'btn': 'Nu.',
+            'mop': 'MOP$',
+            'fjd': 'FJ$',
+            'wst': 'T',
+            'top': 'T$',
+            'vuv': 'VT',
+            'sbd': 'SI$',
+            'pgk': 'K',
+            'nzd': 'NZ$'
+        };
+        
+        return currencySymbols[currency.toLowerCase()] || currency.toUpperCase();
     }
 
     // Helper function to check if a currency is crypto
@@ -1060,7 +1162,7 @@ class RateRadar {
                             toCurrency: 'usd',
                             fromAmount: 1,
                             toAmount: 45000,
-                            rate: '$45,000',
+                            rate: this.getCurrencySymbol('usd') + '45,000',
                             type: 'crypto',
                             createdAt: new Date().toISOString(),
                             isSample: true
@@ -1071,7 +1173,7 @@ class RateRadar {
                             toCurrency: 'usd',
                             fromAmount: 1,
                             toAmount: 3200,
-                            rate: '$3,200',
+                            rate: this.getCurrencySymbol('usd') + '3,200',
                             type: 'crypto',
                             createdAt: new Date().toISOString(),
                             isSample: true

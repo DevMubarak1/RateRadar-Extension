@@ -46,24 +46,24 @@
             try {
                 const result = await chrome.storage.sync.get(['settings']);
                 const settings = result.settings || {};
-                
+            
                 this.isEnabled = settings.smartShopping !== false; // Default to true if not set
                 this.baseCurrency = settings.baseCurrency || 'USD';
                 this.userCurrency = settings.baseCurrency || 'USD'; // Use base currency as user currency
-                
-                console.log('RateRadar: Loaded settings:', {
-                    smartShopping: this.isEnabled,
-                    baseCurrency: this.baseCurrency,
-                    userCurrency: this.userCurrency
-                });
-            } catch (error) {
-                console.log('RateRadar: Error loading settings:', error);
-                // Default to enabled if there's an error
-                this.isEnabled = true;
-                this.baseCurrency = 'USD';
-                this.userCurrency = 'USD';
-            }
+            
+            console.log('RateRadar: Loaded settings:', {
+                smartShopping: this.isEnabled,
+                baseCurrency: this.baseCurrency,
+                userCurrency: this.userCurrency
+                    });
+                } catch (error) {
+            console.log('RateRadar: Error loading settings:', error);
+            // Default to enabled if there's an error
+            this.isEnabled = true;
+            this.baseCurrency = 'USD';
+            this.userCurrency = 'USD';
         }
+    }
 
     setupHighlightListener() {
         // Listen for text selection
@@ -224,10 +224,10 @@
         if (amountMatch) {
             const amount = parseFloat(amountMatch[0].replace(/,/g, ''));
             return { currency, amount };
-        }
+            }
 
-        return null;
-    }
+            return null;
+        }
 
     async showPriceOverlay(priceText, event) {
         try {
@@ -315,7 +315,7 @@
         // Create overlay element
         this.priceOverlay = document.createElement('div');
         this.priceOverlay.style.cssText = `
-            position: fixed;
+                position: fixed;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 16px 20px;
@@ -475,9 +475,9 @@
         if (this.priceOverlay && this.priceOverlay.parentNode) {
             this.priceOverlay.style.animation = 'rateRadarSlideOut 0.3s ease-out';
             setTimeout(() => {
-                if (this.priceOverlay && this.priceOverlay.parentNode) {
-                    this.priceOverlay.parentNode.removeChild(this.priceOverlay);
-                    this.priceOverlay = null;
+        if (this.priceOverlay && this.priceOverlay.parentNode) {
+            this.priceOverlay.parentNode.removeChild(this.priceOverlay);
+            this.priceOverlay = null;
                 }
             }, 300);
         }
