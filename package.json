@@ -21,12 +21,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/rateradar.git"
+    "url": "https://github.com/DevMubarak1/RateRadar-Extension.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/rateradar/issues"
+    "url": "https://github.com/DevMubarak1/RateRadar-Extension/issues"
   },
-  "homepage": "https://github.com/yourusername/rateradar#readme",
+  "homepage": "https://github.com/DevMubarak1/RateRadar-Extension#readme",
   "devDependencies": {},
   "dependencies": {},
   "engines": {

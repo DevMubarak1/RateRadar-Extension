@@ -77,9 +77,8 @@ RateRadar/
 ├── options.js            # Settings functionality
 ├── icons/                # Extension icons
 ├── package.json          # Project metadata
-├── README.md             # This file
 ├── INSTALLATION.md       # Detailed installation guide
-└── readme.md             # Original project research
+└── readme.md             # This file
 ```
 
 ## 🛠️ Technology Stack
