@@ -36,17 +36,11 @@
 ### Installation
 
 1. **Download the Extension**
-   ```bash
-   git clone https://github.com/yourusername/rateradar.git
-   cd rateradar
-   ```
+   - Visit- https://rateradar-five.vercel.app/
+   - Click on the Install RateRadar button
 
-2. **Load in Chrome**
+2. **Start Using**
    - Open Chrome and go to `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked" and select the project folder
-
-3. **Start Using**
    - Click the RateRadar icon in your toolbar
    - Convert currencies, track crypto, and set alerts
 
@@ -64,22 +58,6 @@
    - Set up a test alert
    - View rate history
 
-## 📁 Project Structure
-
-```
-RateRadar/
-├── manifest.json          # Extension configuration
-├── popup.html            # Main popup interface
-├── popup.js              # Popup functionality
-├── background.js          # Background service worker
-├── content.js            # Content script for smart shopping
-├── options.html          # Settings page
-├── options.js            # Settings functionality
-├── icons/                # Extension icons
-├── package.json          # Project metadata
-├── INSTALLATION.md       # Detailed installation guide
-└── readme.md             # This file
-```
 
 ## 🛠️ Technology Stack
 
