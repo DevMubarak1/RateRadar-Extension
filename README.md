@@ -184,7 +184,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📊 Statistics
 
 - **Supported Currencies**: 170+
-- **Supported Cryptocurrencies**: 7,000+
+- **Supported Cryptocurrencies**: 123+
 - **API Response Time**: <500ms average
 - **Extension Size**: <1MB
 - **Memory Usage**: ~5MB active
