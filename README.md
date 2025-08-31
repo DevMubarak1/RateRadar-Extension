@@ -36,7 +36,7 @@
 ### Installation
 
 1. **Download the Extension**
-   - Visit- https://rateradar-five.vercel.app/
+   - Visit- https://rateradar.devmubarak.me/
    - Click on the Install RateRadar button
 
 2. **Start Using**
